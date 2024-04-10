@@ -14,28 +14,32 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.adapter.OnInteractionListener
 import ru.netology.nework.adapter.PostAdapter
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentUserPostsBinding
 import ru.netology.nework.dto.Post
 import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.MediaLifecycleObserver
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.UserViewModel
 import ru.netology.nework.viewmodel.WallViewModel
-
+import javax.inject.Inject
+@AndroidEntryPoint
 class UserPostsFragment : Fragment() {
-
+    @Inject
+    lateinit var auth: AppAuth
     private val userViewModel: UserViewModel by viewModels(ownerProducer = ::requireActivity)
+    @Inject
+    lateinit var factory: WallViewModel.Factory
+
     private val wallViewModel: WallViewModel by viewModels {
-        WallViewModel.WallViewModelFactory(
-            requireActivity().application,
-            userViewModel.selectedUser.value!!,
-            authViewModel.data.value?.id ?: -1L
-        )
+        WallViewModel.provideWallViewModelFactory(
+            factory,
+            userViewModel.selectedUser.value!!
+            )
     }
-    private val authViewModel: AuthViewModel by viewModels()
     private lateinit var binding: FragmentUserPostsBinding
     private val mediaObserver = MediaLifecycleObserver()
     private var postPlaying: Post? = null
@@ -58,7 +62,7 @@ class UserPostsFragment : Fragment() {
             }
 
             override fun onLike(post: Post) {
-                if(authViewModel.authenticated){
+                if(auth.authenticated()){
                     wallViewModel.likeById(post)
                 } else AndroidUtils.showSignInDialog(this@UserPostsFragment)
             }
@@ -92,7 +96,7 @@ class UserPostsFragment : Fragment() {
             }
 
 
-        }, requireContext(), authViewModel.authenticated, mediaObserver)
+        }, requireContext(), auth.authenticated(), mediaObserver)
 
         binding.list.adapter = adapter
 

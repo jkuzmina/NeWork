@@ -1,20 +1,21 @@
 package ru.netology.nework.viewmodel
 
-import android.app.Application
+import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Coords
@@ -32,6 +33,7 @@ import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.SingleLiveEvent
 import java.io.File
 import java.util.Calendar
+import javax.inject.Inject
 
 private val empty = Post(
     id= 0,
@@ -47,45 +49,19 @@ private val empty = Post(
     likedByMe = false,
     users = emptyMap()
 )
-/*private val noPhoto = PhotoModel()
-private val noAudio = AudioModel()
-private val noVideo = VideoModel()*/
 private val noAttachment: AttachmentModel? = null
+@HiltViewModel
+open class PostViewModel @Inject constructor(
+    auth: AppAuth,
+    @ApplicationContext context: Context,
+    apiService: ApiService,
 
-open class PostViewModel(
-    application: Application,
-    private val repository: PostRepository =
-        PostRepositoryImpl(AppDb.getInstance(context = application).postDao(), application)
-    /*userId: Long?,
-    myId: Long?*/
-) : AndroidViewModel(application){
+) : ViewModel(){
+    open val repository: PostRepository = PostRepositoryImpl(AppDb.getInstance(context).postDao(), apiService, auth)
 
-    class PostViewModelFactory(
-        private val application: Application,
-        private val repository: PostRepository = PostRepositoryImpl(AppDb.getInstance(context = application).postDao(), application)
-    )
-        : ViewModelProvider.AndroidViewModelFactory(application) {
-
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-
-            if (modelClass.isAssignableFrom(
-                    PostViewModel::class.java)) {
-
-                return PostViewModel(application, repository) as T
-            }
-
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
-    }
-
-    //private val repository: PostRepository =
-        //PostRepositoryImpl(AppDb.getInstance(context = application).postDao(), application)
-    //private val _data = MutableLiveData(FeedModel<Post>()) //данные для изменения внутри viewmodel
-    /*val data: LiveData<FeedModel<Post>> //для чтения из интерфейса
-        get() = _data*/
     //посты загрузились в репозиторий, сохранились в БД и попали в repository.data
     //во вьюмодели храним их с признаком ownedByMe
-    val data: LiveData<FeedModel<Post>> = AppAuth.getInstance()
+    val data: LiveData<FeedModel<Post>> = auth
         .authStateFlow
         .flatMapLatest {auth ->
             repository.data.map{posts ->
@@ -150,7 +126,7 @@ open class PostViewModel(
         loadPosts()
     }
 
-    open fun loadPosts()  = viewModelScope.launch {
+    fun loadPosts()  = viewModelScope.launch {
         try {
             _dataState.value = FeedModelState(loading = true)
             repository.getAll()
@@ -286,16 +262,6 @@ open class PostViewModel(
         try {
             _dataState.value = FeedModelState(loading = true)
             repository.removeById(post)
-            _dataState.value = FeedModelState()
-        } catch (e: Exception) {
-            _dataState.value = FeedModelState(error = true)
-        }
-    }
-
-    fun getPostById(post: Post)  = viewModelScope.launch {
-        try {
-            _dataState.value = FeedModelState(loading = true)
-            repository.getPostById(post)
             _dataState.value = FeedModelState()
         } catch (e: Exception) {
             _dataState.value = FeedModelState(error = true)

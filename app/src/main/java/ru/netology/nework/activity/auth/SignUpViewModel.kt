@@ -1,18 +1,21 @@
 package ru.netology.nework.activity.auth
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.nework.R
-import ru.netology.nework.api.Api
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AuthState
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.error.ApiError
@@ -23,8 +26,13 @@ import ru.netology.nework.model.UserAuthResult
 import ru.netology.nework.util.SingleLiveEvent
 import java.io.File
 import java.io.IOException
-
-class SignUpViewModel(private val context: Context) : ViewModel() {
+import javax.inject.Inject
+@HiltViewModel
+class SignUpViewModel @SuppressLint("StaticFieldLeak")
+@Inject constructor(
+    private val apiService: ApiService,
+    @ApplicationContext private val context: Context
+) : ViewModel() {
     val name: MutableLiveData<String> = MutableLiveData<String>()
     val login: MutableLiveData<String> = MutableLiveData<String>()
     val pass: MutableLiveData<String> = MutableLiveData<String>()
@@ -73,28 +81,27 @@ class SignUpViewModel(private val context: Context) : ViewModel() {
 
     private suspend fun registerUser(name:String, login: String, pass: String, upload: MediaUpload?): AuthState {
         try {
-            var response: retrofit2.Response<AuthState>? = null
-            response = if(upload != null){
+            val response: retrofit2.Response<AuthState> = if(upload != null){
                 val media = MultipartBody.Part.createFormData(
                     "file", upload.file.name, upload.file.asRequestBody())
-                Api.retrofitService.registerUserWithAvatar(
+                apiService.registerUserWithAvatar(
                     login.toRequestBody("multipart/form-data".toMediaTypeOrNull()),
                     pass.toRequestBody("multipart/form-data".toMediaTypeOrNull()),
                     name.toRequestBody("multipart/form-data".toMediaTypeOrNull()),
                     media)
             }else{
-                Api.retrofitService.registerUser(login, pass, name)
+                apiService.registerUser(login, pass, name)
             }
 
             if (!response.isSuccessful) {
-                var message = ""
-                message = when(response.code()){
-                    403 -> context.getString(R.string.user_already_exists)
-                    415 -> context.getString(R.string.wrong_format_of_photo)
-                    else -> response.message()
+                    var message = ""
+                    message = when(response.code()){
+                        403 -> context.getString(R.string.user_already_exists)
+                        415 -> context.getString(R.string.wrong_format_of_photo)
+                        else -> response.message()
+                    }
+                    throw ApiError(response.code(), message)
                 }
-                throw ApiError(response.code(), message)
-            }
             return response.body() ?: throw ApiError(response.code(), response.message())
         } catch (e: IOException) {
             throw NetworkError

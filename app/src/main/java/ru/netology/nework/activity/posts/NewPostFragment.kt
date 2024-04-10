@@ -37,6 +37,7 @@ import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.activity.events.NewEventFragment
 import ru.netology.nework.activity.posts.ChooseUsersFragment.Companion.longArrayArg
@@ -54,7 +55,7 @@ import ru.netology.nework.viewmodel.PostViewModel
 import java.io.FileNotFoundException
 import java.io.IOException
 
-
+@AndroidEntryPoint
 @Suppress("DEPRECATION")
 class NewPostFragment : Fragment(), UserLocationObjectListener, CameraListener {
 
@@ -63,11 +64,11 @@ class NewPostFragment : Fragment(), UserLocationObjectListener, CameraListener {
         var Bundle.longArg: Long? by LongArg
     }
 
-    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) {
+    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) /*{
         PostViewModel.PostViewModelFactory(
             requireActivity().application
         )
-    }
+    }*/
 
     private var fragmentBinding: FragmentNewPostBinding? = null
     private val mediaObserver = MediaLifecycleObserver()

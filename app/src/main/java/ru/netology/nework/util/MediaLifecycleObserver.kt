@@ -54,7 +54,7 @@ class MediaLifecycleObserver: LifecycleEventObserver {
             else -> Unit
         }
     }
-    fun playAudio(attachment: Attachment, seekBar: SeekBar, playButton: ImageButton) {
+    fun playAudio(attachment: Attachment?, seekBar: SeekBar?, playButton: ImageButton?) {
         if(attachment == null){
             return
         }

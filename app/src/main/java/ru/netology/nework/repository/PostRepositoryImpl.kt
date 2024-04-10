@@ -1,6 +1,5 @@
 package ru.netology.nework.repository
 
-import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -10,9 +9,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import retrofit2.Response
-import ru.netology.nework.R
-import ru.netology.nework.api.Api
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.dao.PostDao
 import ru.netology.nework.dto.Attachment
@@ -23,6 +20,7 @@ import ru.netology.nework.dto.User
 import ru.netology.nework.entity.PostEntity
 import ru.netology.nework.entity.toDto
 import ru.netology.nework.entity.toEntity
+import ru.netology.nework.entity.toEntityNew
 import ru.netology.nework.enumeration.AttachmentType
 import ru.netology.nework.error.ApiError
 import ru.netology.nework.error.AppError
@@ -30,11 +28,14 @@ import ru.netology.nework.error.NetworkError
 import ru.netology.nework.error.UnknownError
 import ru.netology.nework.model.UserAvatar
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
-open class PostRepositoryImpl(
+@Singleton
+open class PostRepositoryImpl @Inject constructor(
     private val dao: PostDao,
-    private val application: Application
+    val apiService: ApiService,
+    val auth: AppAuth
 ): PostRepository {
 
 
@@ -45,7 +46,7 @@ open class PostRepositoryImpl(
 
     override suspend fun getAll() {
         try {
-            val response = Api.retrofitService.getAllPosts()
+            val response = apiService.getAllPosts()
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -58,7 +59,7 @@ open class PostRepositoryImpl(
 
     override suspend fun save(post: Post) {
         try {
-            val response = Api.retrofitService.savePost(post.toPostApi())
+            val response = apiService.savePost(post.toPostApi())
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -96,7 +97,7 @@ open class PostRepositoryImpl(
                 "file", upload.file.name, upload.file.asRequestBody()
             )
 
-            val response = Api.retrofitService.upload(media)
+            val response = apiService.upload(media)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -115,14 +116,15 @@ open class PostRepositoryImpl(
 
     override fun getNewerCount(id: Long): Flow<Int> = flow {
         while (true) {
-                delay(120_000L)
-                val response = Api.retrofitService.getNewer(id)
+                delay(10_000L)
+                val response = apiService.getNewer(id)
                 if (!response.isSuccessful) {
                     throw ApiError(response.code(), response.message())
                 }
 
                 val body = response.body() ?: throw ApiError(response.code(), response.message())
-                dao.insert(body.toEntity())
+                //записываем новые посты с признаком read = false
+                dao.insert(body.toEntityNew())
                 emit(body.size)
         }
     }
@@ -132,7 +134,7 @@ open class PostRepositoryImpl(
 
     override suspend fun getPostById(post: Post): Post {
         try {
-            val response = Api.retrofitService.getPostById(post.id)
+            val response = apiService.getPostById(post.id)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -154,9 +156,9 @@ open class PostRepositoryImpl(
         try {
             likeByIdLocal(post)
             val response = if (!post.likedByMe) {
-                Api.retrofitService.likePostById(post.id)
+                apiService.likePostById(post.id)
             } else {
-                Api.retrofitService.dislikePostById(post.id)
+                apiService.dislikePostById(post.id)
             }
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
@@ -174,11 +176,11 @@ open class PostRepositoryImpl(
     override suspend fun likeByIdLocal(post: Post) {
         return if(post.likedByMe){
             val list = post.likeOwnerIds.filter{
-                it != AppAuth.getInstance().authStateFlow.value.id
+                it != auth.authStateFlow.value.id
             }
             dao.likeById(post.id, list)
         } else{
-            val list = post.likeOwnerIds.plus(AppAuth.getInstance().authStateFlow.value.id)
+            val list = post.likeOwnerIds.plus(auth.authStateFlow.value.id)
 
             dao.likeById(post.id, list)
         }
@@ -189,7 +191,7 @@ open class PostRepositoryImpl(
         val postRemoved = post.copy()
         try {
             dao.removeById(post.id)
-            val response = Api.retrofitService.removePostById(post.id)
+            val response = apiService.removePostById(post.id)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -244,7 +246,7 @@ open class PostRepositoryImpl(
 
     override suspend fun getUserAvatar(userId: Long): String {
         try {
-            val response = Api.retrofitService.getUserById(userId)
+            val response = apiService.getUserById(userId)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -259,7 +261,7 @@ open class PostRepositoryImpl(
     }
     override suspend fun getUser(userId: Long): User {
         try {
-            val response = Api.retrofitService.getUserById(userId)
+            val response = apiService.getUserById(userId)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -268,7 +270,5 @@ open class PostRepositoryImpl(
             throw NetworkError
         }
     }
-
-    fun <T : Any?> errorDescription(response: Response<T>):String = application.getString(R.string.error_text, response.code().toString(), response.message())
 
 }

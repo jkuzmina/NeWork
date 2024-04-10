@@ -16,14 +16,17 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentSignUpBinding
 import ru.netology.nework.util.AndroidUtils
-
+import javax.inject.Inject
+@AndroidEntryPoint
 class SignUpFragment : Fragment() {
-
-    private val viewModel: SignUpViewModel by viewModels(ownerProducer = ::requireParentFragment)
+    @Inject
+    lateinit var auth: AppAuth
+    private val viewModel: SignUpViewModel by viewModels(ownerProducer = ::requireActivity)
     private lateinit var binding: FragmentSignUpBinding
 
     override fun onCreateView(
@@ -53,7 +56,6 @@ class SignUpFragment : Fragment() {
             ImagePicker.with(this)
                 .cropSquare()
                 .compress(2048)
-                //.provider(ImageProvider.GALLERY)
                 .galleryMimeTypes(
                     arrayOf(
                         "image/png",
@@ -88,7 +90,8 @@ class SignUpFragment : Fragment() {
         binding.signUp.setOnClickListener {
             AndroidUtils.hideKeyboard(requireView())
             if (binding.pass.text.toString() != binding.passRepeat.text.toString()) {
-                Snackbar.make(binding.root, "Passwords don't match ", Snackbar.LENGTH_LONG).show()
+                Snackbar.make(binding.root,
+                    getString(R.string.passwords_don_t_match), Snackbar.LENGTH_LONG).show()
             } else {
                 viewModel.name.value = binding.name.text.toString()
                 viewModel.login.value = binding.login.text.toString()
@@ -99,8 +102,7 @@ class SignUpFragment : Fragment() {
         }
 
         viewModel.authState.observe(viewLifecycleOwner) { state ->
-            AppAuth.getInstance().setAuth(state.id, state.token!!)
-            println("signup ${state.id}, ${state.token}")
+            auth.setAuth(state.id, state.token!!)
             findNavController().navigateUp()
         }
 

@@ -6,17 +6,18 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.User
 import ru.netology.nework.model.FeedModelState
 import ru.netology.nework.repository.UserRepository
-import ru.netology.nework.repository.UserRepositoryImpl
+import javax.inject.Inject
 
-class UserViewModel (application: Application) : AndroidViewModel(application){
-    private val repository: UserRepository =
-        UserRepositoryImpl(AppDb.getInstance(context = application).userDao())
+@HiltViewModel
+class UserViewModel @Inject constructor(
+    private val repository: UserRepository,
+    application: Application) : AndroidViewModel(application){
 
     val data: LiveData<List<User>> = repository.data
         .asLiveData(Dispatchers.Default)

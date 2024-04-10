@@ -16,24 +16,25 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.ActivityMainBinding
 import ru.netology.nework.util.SignOutDialogFragment
 import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.EventViewModel
 import ru.netology.nework.viewmodel.PostViewModel
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    @Inject
+    lateinit var auth: AppAuth
     private val viewModel: AuthViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private var showMenu: Boolean = true
-    private val postViewModel: PostViewModel by viewModels {
-        PostViewModel.PostViewModelFactory(
-            application
-        )
-    }
+    private val postViewModel: PostViewModel by viewModels()
     private val eventViewModel: EventViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,7 +122,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-        //menu.getItem(0).setIcon(R.drawable.account_circle)
         menu.let {
             it.setGroupVisible(R.id.unauthenticated, !viewModel.authenticated && showMenu)
             it.setGroupVisible(R.id.authenticated, viewModel.authenticated && showMenu)
@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.signout -> {
-                SignOutDialogFragment().show(supportFragmentManager, getString(R.string.sign_out))
+                SignOutDialogFragment(auth).show(supportFragmentManager, getString(R.string.sign_out))
                 true
             }
             R.id.profile -> {
@@ -168,5 +168,24 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean{
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
+
+    /*private fun checkGoogleApiAvailability() {
+        with(googleApiAvailability) {
+            val code = isGooglePlayServicesAvailable(this@MainActivity)
+            if (code == com.google.android.gms.common.ConnectionResult.SUCCESS) {
+                return@with
+            }
+            if (isUserResolvableError(code)) {
+                getErrorDialog(this@MainActivity, code, 9000)?.show()
+                return
+            }
+            android.widget.Toast.makeText(this@MainActivity, R.string.google_play_unavailable, android.widget.Toast.LENGTH_LONG)
+                .show()
+        }
+
+        firebaseMessaging.token.addOnSuccessListener {
+            println(it)
+        }
+    }*/
 
 }

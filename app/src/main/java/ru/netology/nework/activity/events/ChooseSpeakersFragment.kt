@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.adapter.ChooseUserAdapter
 import ru.netology.nework.adapter.OnInteractionListener
 import ru.netology.nework.databinding.FragmentChooseMentionBinding
@@ -13,7 +14,7 @@ import ru.netology.nework.dto.User
 import ru.netology.nework.util.LongArrayArg
 import ru.netology.nework.viewmodel.EventViewModel
 import ru.netology.nework.viewmodel.UserViewModel
-
+@AndroidEntryPoint
 class ChooseSpeakersFragment : Fragment() {
 
     companion object {

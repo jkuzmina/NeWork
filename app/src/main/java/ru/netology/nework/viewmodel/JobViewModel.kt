@@ -1,17 +1,21 @@
 package ru.netology.nework.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Job
@@ -32,27 +36,31 @@ private val empty = Job(
     link= null,
     userId = 0
     )
-class JobViewModel(application: Application, userId: Long) : AndroidViewModel(application){
-    class JobViewModelFactory(
-        private val app: Application,
-        private val userId: Long)
-        : ViewModelProvider.AndroidViewModelFactory(app) {
 
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+class JobViewModel @AssistedInject constructor(
+    auth: AppAuth,
+    @ApplicationContext context: Context,
+    apiService: ApiService,
+    @Assisted userId: Long,
+    ) : ViewModel(){
 
-            if (modelClass.isAssignableFrom(
-                    JobViewModel::class.java)) {
-
-                return JobViewModel(app, userId) as T
+    @AssistedFactory
+    interface Factory {
+        fun create(userId: Long): JobViewModel
+    }
+    companion object{
+        fun provideJobViewModelFactory(factory: Factory, userId: Long): ViewModelProvider.Factory{
+            return object: ViewModelProvider.Factory{
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return factory.create(userId) as T
+                }
             }
-
-            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 
-    private val repository: JobRepository = JobRepositoryImpl(userId, AppDb.getInstance(context = application).jobDao())
+    private val repository: JobRepository = JobRepositoryImpl(userId, AppDb.getInstance(context = context).jobDao(), apiService)
 
-    val data: LiveData<FeedModel<Job>> = AppAuth.getInstance()
+    val data: LiveData<FeedModel<Job>> = auth
     .authStateFlow
     .flatMapLatest {auth ->
         repository.data.map{jobs ->
@@ -62,8 +70,6 @@ class JobViewModel(application: Application, userId: Long) : AndroidViewModel(ap
             )
         }
     }.asLiveData(Dispatchers.Default)
-    //val data: LiveData<List<Job>> = repository.data
-        //.asLiveData(Dispatchers.Default)
 
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>

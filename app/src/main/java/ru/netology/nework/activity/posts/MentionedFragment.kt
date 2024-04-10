@@ -6,17 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.adapter.OnInteractionListener
 import ru.netology.nework.adapter.UserAdapter
 import ru.netology.nework.databinding.FragmentMentionedBinding
 import ru.netology.nework.viewmodel.PostViewModel
-
+@AndroidEntryPoint
 class MentionedFragment : Fragment() {
-    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) {
+    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) /*{
         PostViewModel.PostViewModelFactory(
             requireActivity().application
         )
-    }
+    }*/
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

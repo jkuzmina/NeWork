@@ -45,6 +45,7 @@ import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.activity.posts.ChooseUsersFragment.Companion.longArrayArg
 import ru.netology.nework.databinding.FragmentNewEventBinding
@@ -63,14 +64,13 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-
+@AndroidEntryPoint
 @Suppress("DEPRECATION")
 class NewEventFragment : Fragment(), UserLocationObjectListener, CameraListener {
 
     companion object {
         const val MAX_SIZE = 15728640
     }
-    //private val viewModel: EventViewModel by navGraphViewModels(R.id.navigationEvents)
     private val viewModel: EventViewModel by viewModels(ownerProducer = ::requireActivity)
     private var fragmentBinding: FragmentNewEventBinding? = null
     private val mediaObserver = MediaLifecycleObserver()

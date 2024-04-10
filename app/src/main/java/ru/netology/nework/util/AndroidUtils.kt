@@ -1,5 +1,3 @@
-@file:Suppress("KotlinDeprecation", "unused", "unused", "unused")
-
 package ru.netology.nework.util
 
 import android.annotation.SuppressLint
@@ -87,13 +85,13 @@ object AndroidUtils {
         dialog.show(fragment.parentFragmentManager, fragment.getString(R.string.authentication))
     }
 
-    fun createBitmapFromVector(context: Context, art: Int): Bitmap? {
+    private fun createBitmapFromVector(context: Context, art: Int): Bitmap? {
         val drawable = ContextCompat.getDrawable(context, art) ?: return null
         val bitmap = Bitmap.createBitmap(
             drawable.intrinsicWidth,
             drawable.intrinsicHeight,
             Bitmap.Config.ARGB_8888
-        ) ?: return null
+        )
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)
         drawable.draw(canvas)

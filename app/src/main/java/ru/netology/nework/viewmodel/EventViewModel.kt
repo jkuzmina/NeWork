@@ -8,13 +8,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ru.netology.nework.auth.AppAuth
-import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Coords
 import ru.netology.nework.dto.Event
 import ru.netology.nework.dto.MediaUpload
@@ -26,11 +26,11 @@ import ru.netology.nework.model.AttachmentModel
 import ru.netology.nework.model.FeedModel
 import ru.netology.nework.model.FeedModelState
 import ru.netology.nework.repository.EventRepository
-import ru.netology.nework.repository.EventRepositoryImpl
 import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.SingleLiveEvent
 import java.io.File
 import java.util.Calendar
+import javax.inject.Inject
 
 private val empty = Event(
     id= 0,
@@ -52,12 +52,16 @@ private val empty = Event(
 private val noAttachment: AttachmentModel? = null
 private const val emptyDateTime = ""
 private val defaultType = EventType.ONLINE
+@HiltViewModel
+class EventViewModel @Inject constructor(
+    private val repository: EventRepository,
+    auth: AppAuth,
+    application: Application
+) : AndroidViewModel(application){
+    //private val repository: EventRepository =
+        //EventRepositoryImpl(AppDb.getInstance(context = application).eventDao())
 
-class EventViewModel(application: Application) : AndroidViewModel(application){
-    private val repository: EventRepository =
-        EventRepositoryImpl(AppDb.getInstance(context = application).eventDao())
-
-    val data: LiveData<FeedModel<Event>> = AppAuth.getInstance()
+    val data: LiveData<FeedModel<Event>> = auth
         .authStateFlow
         .flatMapLatest {auth ->
             repository.data.map{events ->

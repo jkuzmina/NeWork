@@ -17,7 +17,9 @@ import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentPostDetailsBinding
 import ru.netology.nework.dto.User
 import ru.netology.nework.enumeration.AttachmentType
@@ -27,26 +29,26 @@ import ru.netology.nework.util.AndroidUtils.moveCamera
 import ru.netology.nework.util.AndroidUtils.share
 import ru.netology.nework.util.LongArg
 import ru.netology.nework.util.MediaLifecycleObserver
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.PostViewModel
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 @Suppress("DEPRECATION")
 class PostDetailsFragment : Fragment() {
-
-    private val authViewModel: AuthViewModel by viewModels()
+    @Inject
+    lateinit var auth: AppAuth
 
     companion object {
         var Bundle.longArg: Long? by LongArg
     }
-    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) {
+    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) /*{
         PostViewModel.PostViewModelFactory(
             requireActivity().application
         )
-    }
+    }*/
     private var mapLikers = HashMap<Int, ImageView>() //мэппинг текущего порядкового номера юзера и контрола
     private var mapMentioned = HashMap<Int, ImageView>()
     private lateinit var binding: FragmentPostDetailsBinding
@@ -128,7 +130,7 @@ class PostDetailsFragment : Fragment() {
                 published.text = date.format(DateTimeFormatter.ofPattern(context?.getString(R.string.date_pattern)))
                 content.text = post.content
                 like.isChecked = post.likedByMe
-                like.text = post.likes.toString()//"${post.likes()}"
+                like.text = post.likes.toString()
                 mention.isChecked = post.mentionedMe
                 mention.text = post.mentionIds.size.toString()//todo
                 if (post.link != null) {
@@ -140,7 +142,6 @@ class PostDetailsFragment : Fragment() {
                 if(post.coords != null){
                     val point = Point(post.coords.lat, post.coords.long)
                     mapView.isVisible = true
-                    println("coords "+"${post.coords.lat}" + "${post.coords.long}")
                     moveToMarker(point)// Перемещаем камеру в определенную область на карте
                     setMarker(point)// Устанавливаем маркер на карте
                 }else{
@@ -210,7 +211,7 @@ class PostDetailsFragment : Fragment() {
                 }
 
                 like.setOnClickListener {
-                    if(authViewModel.authenticated){
+                    if(auth.authenticated()){
                         clearLikersAvatars()
                         postViewModel.likeById(post)
                     } else {

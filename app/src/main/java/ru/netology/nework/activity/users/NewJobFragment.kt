@@ -15,25 +15,31 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputEditText
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentNewJobBinding
 import ru.netology.nework.util.AndroidUtils
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.JobViewModel
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class NewJobFragment : Fragment() {
-
+    @Inject
+    lateinit var auth: AppAuth
     private lateinit var binding: FragmentNewJobBinding
-    private val authViewModel: AuthViewModel by viewModels()
-    private val jobViewModel: JobViewModel by viewModels{
-        JobViewModel.JobViewModelFactory(
-            requireActivity().application,
-            authViewModel.data.value!!.id
+    @Inject
+    lateinit var factory: JobViewModel.Factory
+
+    private val jobViewModel: JobViewModel by viewModels {
+        JobViewModel.provideJobViewModelFactory(
+            factory,
+            auth.authStateFlow.value.id
         )
     }
 

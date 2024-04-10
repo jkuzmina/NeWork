@@ -12,22 +12,26 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.activity.posts.PostDetailsFragment.Companion.longArg
 import ru.netology.nework.adapter.EventAdapter
 import ru.netology.nework.adapter.EventOnInteractionListener
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentEventsBinding
 import ru.netology.nework.dto.Event
 import ru.netology.nework.util.AndroidUtils.showSignInDialog
 import ru.netology.nework.util.MediaLifecycleObserver
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.EventViewModel
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class EventsFragment : Fragment() {
+    @Inject
+    lateinit var auth: AppAuth
 
     private val eventViewModel: EventViewModel by viewModels(ownerProducer = ::requireActivity)
     private val mediaObserver = MediaLifecycleObserver()
-    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -42,13 +46,13 @@ class EventsFragment : Fragment() {
             }
 
             override fun onLike(event: Event) {
-                if(authViewModel.authenticated){
+                if(auth.authenticated()){
                     eventViewModel.likeById(event)
                 } else showSignInDialog(this@EventsFragment)
             }
 
             override fun onParticipate(event: Event) {
-                if(authViewModel.authenticated){
+                if(auth.authenticated()){
                     eventViewModel.participateById(event)
                 } else showSignInDialog(this@EventsFragment)
             }
@@ -82,7 +86,7 @@ class EventsFragment : Fragment() {
             }
 
 
-        }, requireContext(), authViewModel.authenticated, mediaObserver)
+        }, requireContext(), auth.authenticated(), mediaObserver)
 
         binding.list.adapter = adapter
 
@@ -112,7 +116,7 @@ class EventsFragment : Fragment() {
         }
 
         binding.fab.setOnClickListener {
-            if(authViewModel.authenticated){
+            if(auth.authenticated()){
                 eventViewModel.edit(null)
                 findNavController().navigate(R.id.action_eventsFragment_to_newEventFragment)
             } else showSignInDialog(this)

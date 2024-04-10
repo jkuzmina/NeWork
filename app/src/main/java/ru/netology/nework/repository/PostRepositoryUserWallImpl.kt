@@ -1,10 +1,9 @@
 package ru.netology.nework.repository
 
-import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import ru.netology.nework.api.Api
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.dao.PostDao
 import ru.netology.nework.dto.Post
@@ -16,8 +15,18 @@ import ru.netology.nework.error.NetworkError
 import ru.netology.nework.error.UnknownError
 import java.io.IOException
 
-class PostRepositoryUserWallImpl(private val userId: Long, private val myId: Long, private val dao: PostDao, application: Application) :
-    PostRepositoryImpl(dao, application) {
+/*interface PostRepositoryUserWallAssistedFactory {
+    fun create(userId: Long): PostRepositoryUserWallImpl
+}*/
+
+class PostRepositoryUserWallImpl (
+    private val userId: Long,
+    private val dao: PostDao,
+    apiService: ApiService,
+    auth: AppAuth
+    ) :
+    PostRepositoryImpl(dao, apiService, auth) {
+
 
     override val data = dao.getUserWall(userId)
         .map(List<PostEntity>::toDto)
@@ -27,10 +36,10 @@ class PostRepositoryUserWallImpl(private val userId: Long, private val myId: Lon
     override suspend fun getAll() {
         try {
             val response =
-                if(userId == myId){
-                    Api.retrofitService.getMyWall()
+                if(userId == auth.authStateFlow.value.id){
+                    apiService.getMyWall()
                 } else{
-                    Api.retrofitService.getUserWall(userId)
+                    apiService.getUserWall(userId)
                 }
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
@@ -48,9 +57,9 @@ class PostRepositoryUserWallImpl(private val userId: Long, private val myId: Lon
         try {
             likeByIdLocal(post)
             val response = if (!post.likedByMe) {
-                Api.retrofitService.likeUserPostById(userId, post.id)
+                apiService.likeUserPostById(userId, post.id)
             } else {
-                Api.retrofitService.dislikeUserPostById(userId, post.id)
+                apiService.dislikeUserPostById(userId, post.id)
             }
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
@@ -68,11 +77,11 @@ class PostRepositoryUserWallImpl(private val userId: Long, private val myId: Lon
     override suspend fun likeByIdLocal(post: Post) {
         return if(post.likedByMe){
             val list = post.likeOwnerIds.filter{
-                it != AppAuth.getInstance().authStateFlow.value.id
+                it != auth.authStateFlow.value.id
             }
             dao.likeById(post.id, list)
         } else{
-            val list = post.likeOwnerIds.plus(AppAuth.getInstance().authStateFlow.value.id)
+            val list = post.likeOwnerIds.plus(auth.authStateFlow.value.id)
 
             dao.likeById(post.id, list)
         }

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import ru.netology.nework.api.Api
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.dao.EventDao
 import ru.netology.nework.dto.Attachment
@@ -20,21 +20,29 @@ import ru.netology.nework.dto.User
 import ru.netology.nework.entity.EventEntity
 import ru.netology.nework.entity.toDto
 import ru.netology.nework.entity.toEntity
+import ru.netology.nework.entity.toEntityNew
 import ru.netology.nework.enumeration.AttachmentType
 import ru.netology.nework.error.ApiError
 import ru.netology.nework.error.AppError
 import ru.netology.nework.error.NetworkError
 import ru.netology.nework.error.UnknownError
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class EventRepositoryImpl(private val dao: EventDao): EventRepository {
+@Singleton
+class EventRepositoryImpl @Inject constructor(
+    private val dao: EventDao,
+    private val apiService: ApiService,
+    private val auth: AppAuth
+): EventRepository {
     override val data = dao.getAll()
         .map(List<EventEntity>::toDto)
         .flowOn(Dispatchers.Default)
 
     override suspend fun getAll() {
         try {
-            val response = Api.retrofitService.getAllEvents()
+            val response = apiService.getAllEvents()
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -47,13 +55,12 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
 
     override suspend fun save(event: Event) {
         try {
-            val response = Api.retrofitService.saveEvent(event.toEventApi())
+            val response = apiService.saveEvent(event.toEventApi())
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
             val body = response.body() ?: throw ApiError(response.code(), response.message())
-            val event = EventEntity.fromDto(body)
-            dao.insert(event)
+            dao.insert(EventEntity.fromDto(body))
         } catch (e: IOException) {
             throw NetworkError
         } catch (e: Exception) {
@@ -88,9 +95,9 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
         try {
             likeByIdLocal(event)
             val response = if (!event.likedByMe) {
-                Api.retrofitService.likeEventById(event.id)
+                apiService.likeEventById(event.id)
             } else {
-                Api.retrofitService.dislikeEventById(event.id)
+                apiService.dislikeEventById(event.id)
             }
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
@@ -108,11 +115,11 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
     override suspend fun likeByIdLocal(event: Event) {
         return if(event.likedByMe){
             val list = event.likeOwnerIds.filter{
-                it != AppAuth.getInstance().authStateFlow.value.id
+                it != auth.authStateFlow.value.id
             }
             dao.likeById(event.id, list)
         } else{
-            val list = event.likeOwnerIds.plus(AppAuth.getInstance().authStateFlow.value.id)
+            val list = event.likeOwnerIds.plus(auth.authStateFlow.value.id)
 
             dao.likeById(event.id, list)
         }
@@ -122,9 +129,9 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
         try {
             participateByIdLocal(event)
             val response = if (!event.participatedByMe) {
-                Api.retrofitService.participateEventById(event.id)
+                apiService.participateEventById(event.id)
             } else {
-                Api.retrofitService.notParticipateEventById(event.id)
+                apiService.notParticipateEventById(event.id)
             }
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
@@ -142,11 +149,11 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
     override suspend fun participateByIdLocal(event: Event) {
         return if(event.participatedByMe){
             val list = event.participantsIds.filter{
-                it != AppAuth.getInstance().authStateFlow.value.id
+                it != auth.authStateFlow.value.id
             }
             dao.participateById(event.id, list)
         } else{
-            val list = event.participantsIds.plus(AppAuth.getInstance().authStateFlow.value.id)
+            val list = event.participantsIds.plus(auth.authStateFlow.value.id)
 
             dao.participateById(event.id, list)
         }
@@ -156,7 +163,7 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
         val eventRemoved = event.copy()
         try {
             dao.removeById(event.id)
-            val response = Api.retrofitService.removeEventById(event.id)
+            val response = apiService.removeEventById(event.id)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -205,7 +212,7 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
                 "file", upload.file.name, upload.file.asRequestBody()
             )
 
-            val response = Api.retrofitService.upload(media)
+            val response = apiService.upload(media)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -220,7 +227,7 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
 
     override suspend fun getUser(userId: Long): User {
         try {
-            val response = Api.retrofitService.getUserById(userId)
+            val response = apiService.getUserById(userId)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
@@ -237,13 +244,13 @@ class EventRepositoryImpl(private val dao: EventDao): EventRepository {
     override fun getNewerCount(id: Long): Flow<Int> = flow {
         while (true) {
             delay(10_000L)
-            val response = Api.retrofitService.getNewerEvents(id)
+            val response = apiService.getNewerEvents(id)
             if (!response.isSuccessful) {
                 throw ApiError(response.code(), response.message())
             }
 
             val body = response.body() ?: throw ApiError(response.code(), response.message())
-            dao.insert(body.toEntity())
+            dao.insert(body.toEntityNew())
             emit(body.size)
         }
     }

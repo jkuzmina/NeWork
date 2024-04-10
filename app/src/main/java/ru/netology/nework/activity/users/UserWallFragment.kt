@@ -13,21 +13,23 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.adapter.FragmentPageAdapter
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentUserWallBinding
 import ru.netology.nework.util.LongArg
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.UserViewModel
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class UserWallFragment : Fragment() {
-
+    @Inject
+    lateinit var auth: AppAuth
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager2: ViewPager2
     private lateinit var adapter: FragmentPageAdapter
     private val userViewModel: UserViewModel by viewModels(ownerProducer = ::requireActivity)
-    private val authViewModel: AuthViewModel by viewModels()
     private lateinit var binding: FragmentUserWallBinding
 
     companion object {
@@ -91,7 +93,6 @@ class UserWallFragment : Fragment() {
                 else -> Unit
             }
 
-            //userViewModel.selectedUser.value == authViewModel.data.value?.id
         }.attach()
         viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -101,7 +102,7 @@ class UserWallFragment : Fragment() {
                         binding.fab.visibility = View.GONE
                     }
                     1 -> {
-                        binding.fab.visibility = if(userId == authViewModel.data.value?.id) View.VISIBLE else View.GONE
+                        binding.fab.visibility = if(userId == auth.authStateFlow.value.id) View.VISIBLE else View.GONE
                     }
                     else -> Unit
                 }

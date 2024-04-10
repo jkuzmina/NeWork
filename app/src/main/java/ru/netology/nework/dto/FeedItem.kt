@@ -1,9 +1,3 @@
-@file:Suppress("unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused",
-    "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused",
-    "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused",
-    "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused", "unused"
-)
-
 package ru.netology.nework.dto
 
 import android.content.Context
@@ -23,7 +17,7 @@ data class User(
     val checked: Boolean = false
 ) : FeedItem(){
     fun userIcon(context: Context): TextDrawable{
-        val char = if(name != null && name != "") name?.first() else ""
+        val char = if(name != null && name != "") name.first() else ""
         return TextDrawable(context, char.toString())
     }
 

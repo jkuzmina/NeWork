@@ -12,26 +12,26 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
 import ru.netology.nework.activity.posts.PostDetailsFragment.Companion.longArg
 import ru.netology.nework.adapter.OnInteractionListener
 import ru.netology.nework.adapter.PostAdapter
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentPostsBinding
 import ru.netology.nework.dto.Post
 import ru.netology.nework.util.AndroidUtils.showSignInDialog
 import ru.netology.nework.util.MediaLifecycleObserver
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.PostViewModel
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PostsFragment : Fragment() {
+    @Inject
+    lateinit var auth: AppAuth
 
-    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) {
-        PostViewModel.PostViewModelFactory(
-            requireActivity().application
-        )
-    }
+    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity)
     private val mediaObserver = MediaLifecycleObserver()
-    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,7 +41,6 @@ class PostsFragment : Fragment() {
         lifecycle.addObserver(mediaObserver)
         val adapter = PostAdapter(object : OnInteractionListener {
             override fun onEdit(post: Post) {
-                //postViewModel.edit(post)
                 findNavController().navigate(R.id.action_postsFragment_to_newPostFragment,
                     Bundle().apply{
                         longArg = post.id
@@ -49,7 +48,7 @@ class PostsFragment : Fragment() {
             }
 
             override fun onLike(post: Post){
-                if(authViewModel.authenticated){
+                if(auth.authenticated()){
                     postViewModel.likeById(post)
                 } else showSignInDialog(this@PostsFragment)
             }
@@ -81,7 +80,7 @@ class PostsFragment : Fragment() {
                 mediaObserver.playAudio(post.attachment!!, seekBar, playAudio)
             }
 
-        }, requireContext(), authViewModel.authenticated, mediaObserver)
+        }, requireContext(), auth.authenticated(), mediaObserver)
 
         binding.list.adapter = adapter
 
@@ -111,7 +110,7 @@ class PostsFragment : Fragment() {
         }
 
         binding.fab.setOnClickListener {
-            if(authViewModel.authenticated){
+            if(auth.authenticated()){
                 postViewModel.edit(null)
                 findNavController().navigate(R.id.action_postsFragment_to_newPostFragment)
             } else showSignInDialog(this)

@@ -17,7 +17,9 @@ import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.databinding.FragmentEventDetailBinding
 import ru.netology.nework.dto.User
 import ru.netology.nework.enumeration.AttachmentType
@@ -26,13 +28,14 @@ import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.AndroidUtils.dateUTCToText
 import ru.netology.nework.util.LongArg
 import ru.netology.nework.util.MediaLifecycleObserver
-import ru.netology.nework.viewmodel.AuthViewModel
 import ru.netology.nework.viewmodel.EventViewModel
+import javax.inject.Inject
 
+@AndroidEntryPoint
 @Suppress("DEPRECATION")
 class EventDetailsFragment : Fragment() {
-
-    private val authViewModel: AuthViewModel by viewModels()
+    @Inject
+    lateinit var auth: AppAuth
 
     companion object {
         var Bundle.longArg: Long? by LongArg
@@ -219,7 +222,7 @@ class EventDetailsFragment : Fragment() {
                 }
 
                 like.setOnClickListener {
-                    if(authViewModel.authenticated){
+                    if(auth.authenticated()){
                         clearLikersAvatars()
                         eventViewModel.likeById(event)
                     } else {
@@ -229,7 +232,7 @@ class EventDetailsFragment : Fragment() {
                 }
 
                 participants.setOnClickListener {
-                    if(authViewModel.authenticated){
+                    if(auth.authenticated()){
                         clearParticipantsAvatars()
                         eventViewModel.participateById(event)
                     } else {

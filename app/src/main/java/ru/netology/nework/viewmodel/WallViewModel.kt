@@ -1,43 +1,41 @@
 package ru.netology.nework.viewmodel
 
-import android.app.Application
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.qualifiers.ApplicationContext
+import ru.netology.nework.api.ApiService
+import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.db.AppDb
 import ru.netology.nework.repository.PostRepository
 import ru.netology.nework.repository.PostRepositoryUserWallImpl
 
 
 
-class WallViewModel(
-    application: Application,
-    private val userId: Long,
-    private val myId: Long,
-    private val repository: PostRepository
-) : PostViewModel(application, repository) {
+class WallViewModel @AssistedInject constructor(
+    auth: AppAuth,
+    @ApplicationContext context: Context,
+    @Assisted private val userId: Long,
+    apiService: ApiService,
+) : PostViewModel(auth, context, apiService) {
 
-    class WallViewModelFactory(
-        private val application: Application,
-        private val userId: Long,
-        private val myId: Long,
-        private val repository: PostRepository = PostRepositoryUserWallImpl(userId, myId, AppDb.getInstance(context = application).postDao(), application))
-        : ViewModelProvider.AndroidViewModelFactory(application) {
-
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-
-            if (modelClass.isAssignableFrom(
-                    WallViewModel::class.java)) {
-                val vm = WallViewModel(
-                    application = application,
-                    userId = userId,
-                    myId = myId,
-                    repository = repository
-                )
-                return vm as T
+    @AssistedFactory
+    interface Factory {
+        fun create(userId: Long): WallViewModel
+    }
+    companion object{
+        fun provideWallViewModelFactory(factory: Factory, userId: Long): ViewModelProvider.Factory{
+            return object: ViewModelProvider.Factory{
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return factory.create(userId) as T
+                }
             }
-
-            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
+
+    override val repository: PostRepository = PostRepositoryUserWallImpl(userId, AppDb.getInstance(context).postDao(), apiService, auth)
 
 }

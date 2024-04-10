@@ -4,16 +4,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import ru.netology.nework.api.Api
+import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AuthState
 import ru.netology.nework.error.ApiError
 import ru.netology.nework.error.NetworkError
 import ru.netology.nework.model.UserAuthResult
 import ru.netology.nework.util.SingleLiveEvent
 import java.io.IOException
+import javax.inject.Inject
 
-class SignInViewModel : ViewModel() {
+@HiltViewModel
+class SignInViewModel @Inject constructor(
+    private val apiService: ApiService
+) : ViewModel() {
     val login: MutableLiveData<String> = MutableLiveData<String>()
     val pass: MutableLiveData<String> = MutableLiveData<String>()
 
@@ -41,7 +46,7 @@ class SignInViewModel : ViewModel() {
 
     private suspend fun updateUser(login: String, pass: String): AuthState {
         try {
-            val response = Api.retrofitService.updateUser(login, pass)
+            val response = apiService.updateUser(login, pass)
             if (!response.isSuccessful) {
                 var message = ""
                 message = when(response.code()){
