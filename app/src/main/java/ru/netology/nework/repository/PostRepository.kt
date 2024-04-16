@@ -1,5 +1,6 @@
 package ru.netology.nework.repository
 
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import ru.netology.nework.dto.Media
 import ru.netology.nework.dto.MediaUpload
@@ -9,13 +10,12 @@ import ru.netology.nework.enumeration.AttachmentType
 import ru.netology.nework.model.UserAvatar
 
 interface PostRepository {
-
-    val data: Flow<List<Post>>
+    val data: Flow<PagingData<Post>>
     suspend fun getAll()
     suspend fun save(post: Post)
     suspend fun saveWithAttachment(post: Post, upload: MediaUpload, attachmentType: AttachmentType)
     suspend fun saveLocal(post: Post)
-    suspend fun getPostById(post: Post): Post
+    suspend fun getPostById(postId: Long): Post
     suspend fun likeById(post: Post): Post
     suspend fun likeByIdLocal(post: Post)
     suspend fun removeById(post: Post)
@@ -28,4 +28,5 @@ interface PostRepository {
     suspend fun upload(upload: MediaUpload): Media
     suspend fun readNewPosts()
     fun getNewerCount(id: Long): Flow<Int>
+    suspend fun latestReadPostId(): Long
 }

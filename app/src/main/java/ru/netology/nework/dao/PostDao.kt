@@ -1,5 +1,6 @@
 package ru.netology.nework.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -9,6 +10,10 @@ import ru.netology.nework.entity.PostEntity
 
 @Dao
 interface PostDao {
+
+    @Query("SELECT * FROM PostEntity ORDER BY id DESC")
+    fun pagingSource(): PagingSource<Int, PostEntity>
+
     @Query("SELECT * FROM PostEntity where read = 1 ORDER BY id DESC")
     fun getAll(): Flow<List<PostEntity>>
 
@@ -17,6 +22,12 @@ interface PostDao {
 
     @Query("SELECT COUNT(*) FROM PostEntity where read = 0")
     suspend fun newerCount(): Int
+
+    @Query("SELECT MAX(id) FROM PostEntity where read = 1")
+    suspend fun latestReadPostId(): Long?
+
+    @Query("SELECT MAX(id) FROM PostEntity where read = 1 AND authorId = :authorId")
+    suspend fun latestUserReadPostId(authorId: Long): Long?
 
     @Query("SELECT COUNT(*) FROM PostEntity")
     suspend fun postsCount(): Int
@@ -53,5 +64,11 @@ interface PostDao {
 
     @Query("SELECT * FROM PostEntity where authorId = :authorId ORDER BY id DESC")
     fun getUserWall(authorId: Long): Flow<List<PostEntity>>
+
+    @Query("SELECT * FROM PostEntity where authorId = :authorId ORDER BY id DESC")
+    fun pagingSourceUserWall(authorId: Long): PagingSource<Int, PostEntity>
+
+    @Query("DELETE FROM PostEntity")
+    suspend fun removeAll()
 
 }

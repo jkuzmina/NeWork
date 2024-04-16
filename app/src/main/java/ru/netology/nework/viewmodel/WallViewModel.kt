@@ -36,6 +36,13 @@ class WallViewModel @AssistedInject constructor(
         }
     }
 
-    override val repository: PostRepository = PostRepositoryUserWallImpl(userId, AppDb.getInstance(context).postDao(), apiService, auth)
+    override val repository: PostRepository = PostRepositoryUserWallImpl(
+        AppDb.getInstance(context),
+        AppDb.getInstance(context).postDao(),
+        apiService,
+        auth,
+        userId,
+        AppDb.getInstance(context).wallRemoteKeyDao(),
+    )
 
 }

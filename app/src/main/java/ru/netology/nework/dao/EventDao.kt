@@ -1,5 +1,6 @@
 package ru.netology.nework.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -13,8 +14,14 @@ interface EventDao {
     @Query("SELECT * FROM EventEntity where read = 1 ORDER BY id DESC")
     fun getAll(): Flow<List<EventEntity>>
 
+    @Query("SELECT * FROM EventEntity ORDER BY id DESC")
+    fun pagingSource(): PagingSource<Int, EventEntity>
+
     @Query("SELECT COUNT(*) == 0 FROM EventEntity")
     suspend fun isEmpty(): Boolean
+
+    @Query("SELECT MAX(id) FROM EventEntity where read = 1")
+    suspend fun latestReadEventId(): Long?
 
     @Query("SELECT COUNT(*) FROM EventEntity where read = 0")
     suspend fun newerCount(): Int
@@ -57,4 +64,7 @@ interface EventDao {
         WHERE id = :id
         """)
     suspend fun participateById(id: Long, participantsIds: List<Long>)
+
+    @Query("DELETE FROM EventEntity")
+    suspend fun removeAll()
 }

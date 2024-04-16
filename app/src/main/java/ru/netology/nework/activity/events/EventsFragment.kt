@@ -10,9 +10,14 @@ import android.widget.SeekBar
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.snackbar.Snackbar
+import androidx.paging.LoadState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nework.R
 import ru.netology.nework.activity.posts.PostDetailsFragment.Companion.longArg
 import ru.netology.nework.adapter.EventAdapter
@@ -90,23 +95,27 @@ class EventsFragment : Fragment() {
 
         binding.list.adapter = adapter
 
-        eventViewModel.dataState.observe(viewLifecycleOwner) { state ->
-            binding.progress.isVisible = state.loading
-            binding.swiperefresh.isRefreshing = state.refreshing
-            if (state.error) {
-                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.retry_loading) { eventViewModel.loadEvents() }
-                    .show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                eventViewModel.data.collectLatest(adapter::submitData)
             }
         }
-        eventViewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.data)
-            binding.emptyText.isVisible = state.empty
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { state ->
+                    binding.swiperefresh.isRefreshing =
+                        state.refresh is LoadState.Loading ||
+                                state.prepend is LoadState.Loading ||
+                                state.append is LoadState.Loading
+                }
+            }
         }
 
-        eventViewModel.newerCount.observe(viewLifecycleOwner) { state ->
-            binding.newEvents.isVisible = state > 0
-            println(state)
+        viewLifecycleOwner.lifecycleScope.launch {
+            eventViewModel.newerCount.collectLatest{
+                binding.newEvents.isVisible = it > 0
+                println(it)
+            }
         }
 
         binding.newEvents.setOnClickListener {
@@ -123,10 +132,7 @@ class EventsFragment : Fragment() {
 
         }
 
-        binding.swiperefresh.setOnRefreshListener {
-            eventViewModel.loadEvents()
-            binding.swiperefresh.isRefreshing = false
-        }
+        binding.swiperefresh.setOnRefreshListener(adapter::refresh)
         return binding.root
     }
 

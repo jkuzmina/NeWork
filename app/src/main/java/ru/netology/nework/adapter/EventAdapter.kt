@@ -10,8 +10,8 @@ import android.widget.MediaController
 import android.widget.PopupMenu
 import android.widget.SeekBar
 import androidx.core.view.isVisible
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ru.netology.nework.R
@@ -39,7 +39,7 @@ class EventAdapter {
         context: Context,
         private val authenticated: Boolean,
         private val mediaLifecycleObserver: MediaLifecycleObserver
-    ): ListAdapter<Event, EventAdapter.EventViewHolder>(EventDiffCallback()) {
+    ): PagingDataAdapter<Event, EventAdapter.EventViewHolder>(EventDiffCallback()) {
 
 
         private val context: Context
@@ -59,7 +59,9 @@ class EventAdapter {
 
         override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
             val event = getItem(position)
-            holder.bind(event, position)
+            if (event != null) {
+                holder.bind(event, position)
+            }
         }
 
 
@@ -216,7 +218,7 @@ class EventAdapter {
 
                     like.setOnClickListener {
                         onInteractionListener.onLike(event)
-                        if(authenticated) {
+                        if(!authenticated) {
                             notifyItemChanged(position)
                         }
                     }
@@ -231,7 +233,7 @@ class EventAdapter {
 
                     participants.setOnClickListener {
                         onInteractionListener.onParticipate(event)
-                        if(authenticated) {
+                        if(!authenticated) {
                             notifyItemChanged(position)
                         }
                     }

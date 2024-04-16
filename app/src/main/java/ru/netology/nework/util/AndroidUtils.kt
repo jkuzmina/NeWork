@@ -78,7 +78,6 @@ object AndroidUtils {
             Intent.createChooser(intent, context.getString(R.string.share))
         startActivity(context, shareIntent, null)
     }
-    //fun isAuthenticated(): Boolean = AppAuth.getInstance().authenticated()
 
     fun showSignInDialog(fragment: Fragment){
         val dialog = SignInDialogFragment()
@@ -112,7 +111,6 @@ object AndroidUtils {
     }
 
 
-
     fun moveCamera(mapView: MapView, point: Point, zoom: Float = 16.5f) {
         mapView.map.move(
             CameraPosition(point, zoom, 0.0f, 0.0f),
@@ -126,7 +124,6 @@ object AndroidUtils {
         val marker = mapView.map.mapObjects.addPlacemark(point, ImageProvider.fromBitmap(markerPin))
         marker.opacity = 0.5f // Устанавливаем прозрачность метке
         return marker
-        //marker.addTapListener(placemarkTapListener)
     }
 
 }

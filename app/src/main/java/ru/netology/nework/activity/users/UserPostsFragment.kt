@@ -8,13 +8,17 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.SeekBar
 import androidx.core.net.toUri
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.snackbar.Snackbar
+import androidx.paging.LoadState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nework.R
 import ru.netology.nework.adapter.OnInteractionListener
 import ru.netology.nework.adapter.PostAdapter
@@ -50,9 +54,7 @@ class UserPostsFragment : Fragment() {
     ): View {
         // Inflate the layout for this fragment
         binding = FragmentUserPostsBinding.inflate(layoutInflater, container, false)
-        userViewModel.selectedUser.observe(viewLifecycleOwner) {
-            wallViewModel.loadPosts()
-        }
+
         val adapter = PostAdapter(object : OnInteractionListener {
             override fun onEdit(post: Post) {
                 val request = NavDeepLinkRequest.Builder
@@ -100,26 +102,23 @@ class UserPostsFragment : Fragment() {
 
         binding.list.adapter = adapter
 
-        wallViewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.data)
-            binding.emptyText.isVisible = state.empty
-        }
-
-        wallViewModel.dataState.observe(viewLifecycleOwner) { state ->
-            binding.progress.isVisible = state.loading
-            binding.swiperefresh.isRefreshing = state.refreshing
-            if (state.error) {
-                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.retry_loading) {
-                        wallViewModel.loadPosts()
-                    }
-                    .show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                wallViewModel.data.collectLatest(adapter::submitData)
             }
         }
-        binding.swiperefresh.setOnRefreshListener {
-            wallViewModel.loadPosts()
-            binding.swiperefresh.isRefreshing = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { state ->
+                    binding.swiperefresh.isRefreshing =
+                        state.refresh is LoadState.Loading ||
+                                state.prepend is LoadState.Loading ||
+                                state.append is LoadState.Loading
+                }
+            }
         }
+
+        binding.swiperefresh.setOnRefreshListener(adapter::refresh)
         return binding.root
     }
 

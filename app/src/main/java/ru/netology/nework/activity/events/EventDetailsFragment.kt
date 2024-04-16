@@ -94,161 +94,164 @@ class EventDetailsFragment : Fragment() {
         MapKitFactory.initialize(requireContext())
         lifecycle.addObserver(mediaObserver)
         val eventId = arguments?.longArg ?: -1
-
-        eventViewModel.data.observe(viewLifecycleOwner) { events ->
-            val event = events.data.find { it.id == eventId } ?: run {
-                findNavController().navigateUp() // the post was deleted, close the fragment
-                return@observe
-            }
-            if(event.likeOwnerIds.isNotEmpty()) {
-                if(needLoadLikersAvatars) {
-                    needLoadLikersAvatars = false
-                    eventViewModel.getLikers(event)
-                    binding.likersAvatarsNested.avatarMore.isVisible = event.likeOwnerIds.size > 5
-                }
-            }
-            if(event.speakerIds.isNotEmpty()) {
-                if(needLoadSpeakersAvatars) {
-                    eventViewModel.getSpeakers(event)
-                    needLoadSpeakersAvatars = false
-                    binding.speakersAvatarsNested.avatarMore.isVisible = event.speakerIds.size > 5
-                }
-            }
-
-            if(event.participantsIds.isNotEmpty()) {
-                if(needLoadParticipantsAvatars) {
-                    eventViewModel.getParticipants(event)
-                    needLoadParticipantsAvatars = false
-                    binding.participantsAvatarsNested.avatarMore.isVisible =
-                        event.participantsIds.size > 5
-                }
-            }
-            binding.apply {
-                author.text = event.author
-                Glide.with(avatar)
-                    .load(event.authorAvatar)
-                    .placeholder(R.drawable.ic_loading_100dp)
-                    .error(R.drawable.ic_error_100dp)
-                    .timeout(10_000)
-                    .circleCrop()
-                    .into(binding.avatar)
-                eventType.text =
-                    when(event.type){
-                        EventType.OFFLINE -> getString(R.string.offline)
-                        EventType.ONLINE -> getString(R.string.online)
-                    }
-                published.text = dateUTCToText(event.datetime, requireContext())
-                content.text = event.content
-                like.isChecked = event.likedByMe
-                like.text = event.likes.toString()//"${post.likes()}"
-                participants.isChecked = event.participatedByMe
-                participants.text = event.participantsIds.size.toString()//todo
-                if (event.link != null) {
-                    link.isVisible = true
-                    link.text = event.link
-                } else {
-                    link.isVisible = false
-                }
-                if(event.coords != null){
-                    val point = Point(event.coords.lat, event.coords.long)
-                    mapView.isVisible = true
-                    moveToMarker(point)// Перемещаем камеру в определенную область на карте
-                    setMarker(point)// Устанавливаем маркер на карте
-                }else{
-                    mapView.isVisible = false
-                }
-
-                //вложение
-                if(event.attachment?.url != null) {
-                    when (event.attachment.type) {
-                        //изображение
-                        AttachmentType.IMAGE -> {
-                            imageAttachment.isVisible = true
-                            audioAttachment.audioAttachmentNested.isVisible = false
-                            videoAttachment.videoAttachmentNested.isVisible = false
-                            Glide.with(imageAttachment)
-                                .load(event.attachment.url)
-                                .placeholder(R.drawable.ic_loading_100dp)
-                                .error(R.drawable.ic_error_100dp)
-                                .timeout(10_000)
-                                .centerCrop()
-                                .into(binding.imageAttachment)
-                        }
-                        //видео
-                        AttachmentType.VIDEO -> {
-                            audioAttachment.audioAttachmentNested.isVisible = false
-                            imageAttachment.isVisible = false
-                            videoAttachment.videoAttachmentNested.isVisible = true
-                            Glide.with(videoAttachment.videoThumb)
-                                .load(event.attachment.url)
-                                .into(binding.videoAttachment.videoThumb)
-                        }
-                        //аудио
-                        AttachmentType.AUDIO -> {
-                            audioAttachment.audioAttachmentNested.isVisible = true
-                            imageAttachment.isVisible = false
-                            videoAttachment.videoAttachmentNested.isVisible = false
-                        }
-
+        eventViewModel.getEventById(eventId)
+        eventViewModel.currentEvent.observe(viewLifecycleOwner) { event ->
+            if(event != null) {
+                if (event.likeOwnerIds.isNotEmpty()) {
+                    if (needLoadLikersAvatars) {
+                        needLoadLikersAvatars = false
+                        eventViewModel.getLikers(event)
+                        binding.likersAvatarsNested.avatarMore.isVisible =
+                            event.likeOwnerIds.size > 5
                     }
                 }
-                else{
-                    imageAttachment.isVisible = false
-                    Glide.with(imageAttachment).clear(binding.imageAttachment)
-                    audioAttachment.audioAttachmentNested.isVisible = false
-                    videoAttachment.videoAttachmentNested.isVisible = false
-                }
-
-                videoAttachment.playVideo.setOnClickListener {
-                    videoAttachment.videoView.isVisible = true
-                    videoAttachment.videoView.apply {
-                        setMediaController(MediaController(context))
-                        setVideoURI(Uri.parse(event.attachment?.url))
-                        setOnPreparedListener{
-                            videoAttachment.videoThumb.isVisible = false
-                            videoAttachment.playVideo.isVisible = false
-                            start()
-                        }
-                        setOnCompletionListener {
-                            stopPlayback()
-                            videoAttachment.videoView.isVisible = false
-                            videoAttachment.playVideo.isVisible = true
-                            videoAttachment.videoThumb.isVisible = true
-                        }
+                if (event.speakerIds.isNotEmpty()) {
+                    if (needLoadSpeakersAvatars) {
+                        eventViewModel.getSpeakers(event)
+                        needLoadSpeakersAvatars = false
+                        binding.speakersAvatarsNested.avatarMore.isVisible =
+                            event.speakerIds.size > 5
                     }
                 }
-                audioAttachment.playAudio.setOnClickListener{
-                    mediaObserver.playAudio(event.attachment!!, binding.audioAttachment.seekBar, binding.audioAttachment.playAudio)
-                }
 
-                like.setOnClickListener {
-                    if(auth.authenticated()){
-                        clearLikersAvatars()
-                        eventViewModel.likeById(event)
+                if (event.participantsIds.isNotEmpty()) {
+                    if (needLoadParticipantsAvatars) {
+                        eventViewModel.getParticipants(event)
+                        needLoadParticipantsAvatars = false
+                        binding.participantsAvatarsNested.avatarMore.isVisible =
+                            event.participantsIds.size > 5
+                    }
+                }
+                binding.apply {
+                    author.text = event.author
+                    Glide.with(avatar)
+                        .load(event.authorAvatar)
+                        .placeholder(R.drawable.ic_loading_100dp)
+                        .error(R.drawable.ic_error_100dp)
+                        .timeout(10_000)
+                        .circleCrop()
+                        .into(binding.avatar)
+                    eventType.text =
+                        when (event.type) {
+                            EventType.OFFLINE -> getString(R.string.offline)
+                            EventType.ONLINE -> getString(R.string.online)
+                        }
+                    published.text = dateUTCToText(event.datetime, requireContext())
+                    content.text = event.content
+                    like.isChecked = event.likedByMe
+                    like.text = event.likes.toString()
+                    participants.isChecked = event.participatedByMe
+                    participants.text = event.participantsIds.size.toString()
+                    if (event.link != null) {
+                        link.isVisible = true
+                        link.text = event.link
                     } else {
-                        like.isChecked = !like.isChecked
-                        AndroidUtils.showSignInDialog(this@EventDetailsFragment)
+                        link.isVisible = false
                     }
-                }
-
-                participants.setOnClickListener {
-                    if(auth.authenticated()){
-                        clearParticipantsAvatars()
-                        eventViewModel.participateById(event)
+                    if (event.coords != null) {
+                        val point = Point(event.coords.lat, event.coords.long)
+                        mapView.isVisible = true
+                        moveToMarker(point)// Перемещаем камеру в определенную область на карте
+                        setMarker(point)// Устанавливаем маркер на карте
                     } else {
-                        participants.isChecked = !participants.isChecked
-                        AndroidUtils.showSignInDialog(this@EventDetailsFragment)
+                        mapView.isVisible = false
                     }
-                }
 
-                likersAvatarsNested.avatarMore.setOnClickListener {
-                    findNavController().navigate(R.id.action_eventDetailsFragment_to_likersFragment)
-                }
-                speakersAvatarsNested.avatarMore.setOnClickListener {
-                    findNavController().navigate(R.id.action_eventDetailsFragment_to_speakersFragment)
-                }
-                participantsAvatarsNested.avatarMore.setOnClickListener {
-                    findNavController().navigate(R.id.action_eventDetailsFragment_to_participantsFragment)
+                    //вложение
+                    if (event.attachment?.url != null) {
+                        when (event.attachment.type) {
+                            //изображение
+                            AttachmentType.IMAGE -> {
+                                imageAttachment.isVisible = true
+                                audioAttachment.audioAttachmentNested.isVisible = false
+                                videoAttachment.videoAttachmentNested.isVisible = false
+                                Glide.with(imageAttachment)
+                                    .load(event.attachment.url)
+                                    .placeholder(R.drawable.ic_loading_100dp)
+                                    .error(R.drawable.ic_error_100dp)
+                                    .timeout(10_000)
+                                    .centerCrop()
+                                    .into(binding.imageAttachment)
+                            }
+                            //видео
+                            AttachmentType.VIDEO -> {
+                                audioAttachment.audioAttachmentNested.isVisible = false
+                                imageAttachment.isVisible = false
+                                videoAttachment.videoAttachmentNested.isVisible = true
+                                Glide.with(videoAttachment.videoThumb)
+                                    .load(event.attachment.url)
+                                    .into(binding.videoAttachment.videoThumb)
+                            }
+                            //аудио
+                            AttachmentType.AUDIO -> {
+                                audioAttachment.audioAttachmentNested.isVisible = true
+                                imageAttachment.isVisible = false
+                                videoAttachment.videoAttachmentNested.isVisible = false
+                            }
+
+                        }
+                    } else {
+                        imageAttachment.isVisible = false
+                        Glide.with(imageAttachment).clear(binding.imageAttachment)
+                        audioAttachment.audioAttachmentNested.isVisible = false
+                        videoAttachment.videoAttachmentNested.isVisible = false
+                    }
+
+                    videoAttachment.playVideo.setOnClickListener {
+                        videoAttachment.videoView.isVisible = true
+                        videoAttachment.videoView.apply {
+                            setMediaController(MediaController(context))
+                            setVideoURI(Uri.parse(event.attachment?.url))
+                            setOnPreparedListener {
+                                videoAttachment.videoThumb.isVisible = false
+                                videoAttachment.playVideo.isVisible = false
+                                start()
+                            }
+                            setOnCompletionListener {
+                                stopPlayback()
+                                videoAttachment.videoView.isVisible = false
+                                videoAttachment.playVideo.isVisible = true
+                                videoAttachment.videoThumb.isVisible = true
+                            }
+                        }
+                    }
+                    audioAttachment.playAudio.setOnClickListener {
+                        mediaObserver.playAudio(
+                            event.attachment!!,
+                            binding.audioAttachment.seekBar,
+                            binding.audioAttachment.playAudio
+                        )
+                    }
+
+                    like.setOnClickListener {
+                        if (auth.authenticated()) {
+                            clearLikersAvatars()
+                            eventViewModel.likeById(event)
+                        } else {
+                            like.isChecked = !like.isChecked
+                            AndroidUtils.showSignInDialog(this@EventDetailsFragment)
+                        }
+                    }
+
+                    participants.setOnClickListener {
+                        if (auth.authenticated()) {
+                            clearParticipantsAvatars()
+                            eventViewModel.participateById(event)
+                        } else {
+                            participants.isChecked = !participants.isChecked
+                            AndroidUtils.showSignInDialog(this@EventDetailsFragment)
+                        }
+                    }
+
+                    likersAvatarsNested.avatarMore.setOnClickListener {
+                        findNavController().navigate(R.id.action_eventDetailsFragment_to_likersFragment)
+                    }
+                    speakersAvatarsNested.avatarMore.setOnClickListener {
+                        findNavController().navigate(R.id.action_eventDetailsFragment_to_speakersFragment)
+                    }
+                    participantsAvatarsNested.avatarMore.setOnClickListener {
+                        findNavController().navigate(R.id.action_eventDetailsFragment_to_participantsFragment)
+                    }
                 }
             }
 

@@ -10,9 +10,14 @@ import android.widget.SeekBar
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.snackbar.Snackbar
+import androidx.paging.LoadState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nework.R
 import ru.netology.nework.activity.posts.PostDetailsFragment.Companion.longArg
 import ru.netology.nework.adapter.OnInteractionListener
@@ -84,23 +89,26 @@ class PostsFragment : Fragment() {
 
         binding.list.adapter = adapter
 
-        postViewModel.dataState.observe(viewLifecycleOwner) { state ->
-            binding.progress.isVisible = state.loading
-            binding.swiperefresh.isRefreshing = state.refreshing
-            if (state.error) {
-                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.retry_loading) { postViewModel.loadPosts() }
-                    .show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                postViewModel.data.collectLatest(adapter::submitData)
             }
         }
-        postViewModel.data.observe(viewLifecycleOwner) { state ->
-            adapter.submitList(state.data)
-            binding.emptyText.isVisible = state.empty
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { state ->
+                    binding.swiperefresh.isRefreshing =
+                        state.refresh is LoadState.Loading ||
+                                state.prepend is LoadState.Loading ||
+                                state.append is LoadState.Loading
+                }
+            }
         }
-
-        postViewModel.newerCount.observe(viewLifecycleOwner) { state ->
-            binding.newPosts.isVisible = state > 0
-            println(state)
+        viewLifecycleOwner.lifecycleScope.launch {
+            postViewModel.newerCount.collectLatest{
+                binding.newPosts.isVisible = it > 0
+                println(it)
+            }
         }
 
         binding.newPosts.setOnClickListener {
@@ -108,6 +116,7 @@ class PostsFragment : Fragment() {
             binding.newPosts.isVisible = false
             binding.list.smoothScrollToPosition(0)
         }
+
 
         binding.fab.setOnClickListener {
             if(auth.authenticated()){
@@ -117,10 +126,7 @@ class PostsFragment : Fragment() {
 
         }
 
-        binding.swiperefresh.setOnRefreshListener {
-            postViewModel.loadPosts()
-            binding.swiperefresh.isRefreshing = false
-        }
+        binding.swiperefresh.setOnRefreshListener(adapter::refresh)
         return binding.root
     }
 

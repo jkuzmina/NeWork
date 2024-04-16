@@ -64,11 +64,7 @@ class NewPostFragment : Fragment(), UserLocationObjectListener, CameraListener {
         var Bundle.longArg: Long? by LongArg
     }
 
-    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) /*{
-        PostViewModel.PostViewModelFactory(
-            requireActivity().application
-        )
-    }*/
+    private val viewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity)
 
     private var fragmentBinding: FragmentNewPostBinding? = null
     private val mediaObserver = MediaLifecycleObserver()
@@ -146,10 +142,10 @@ class NewPostFragment : Fragment(), UserLocationObjectListener, CameraListener {
         }
 
         val postId = arguments?.longArg ?: -1L
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            val post = posts.data.find { it.id == postId }
-            if (postId != -1L) {
-                viewModel.edit(post)
+        viewModel.getPostById(postId)
+        viewModel.currentPost.observe(viewLifecycleOwner) {
+            it?.let {
+                viewModel.edit(it)
             }
         }
 

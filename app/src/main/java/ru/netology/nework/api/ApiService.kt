@@ -34,36 +34,19 @@ fun retrofit(client: OkHttpClient): Retrofit = Retrofit.Builder()
     .client(client)
     .build()
 
-/*private val logging = HttpLoggingInterceptor().apply {
-    if (BuildConfig.DEBUG) {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
-}
-
-private val okhttp = OkHttpClient.Builder()
-    .addInterceptor { chain ->
-        AppAuth.getInstance().authStateFlow.value.token?.let { token ->
-            val newRequest = chain.request().newBuilder()
-                .addHeader("Authorization", token)
-                .build()
-            return@addInterceptor chain.proceed(newRequest)
-        }
-        chain.proceed(chain.request())
-    }
-    .addInterceptor(ApiInterceptor())
-    .addInterceptor(logging)
-    .build()
-
-private val retrofit = Retrofit.Builder()
-    .addConverterFactory(GsonConverterFactory.create())
-    .baseUrl(BASE_URL)
-    .client(okhttp)
-    .build()*/
-
 interface ApiService {
     // posts -->
     @GET("posts")
     suspend fun getAllPosts(): Response<List<Post>>
+
+    @GET("posts/latest")
+    suspend fun getPostsLatest(@Query("count") count: Int): Response<List<Post>>
+
+    @GET("posts/{id}/before")
+    suspend fun getPostsBefore(@Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
+
+    @GET("posts/{id}/after")
+    suspend fun getPostsAfter(@Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
 
     @GET("posts/{id}")
     suspend fun getPostById(@Path("id") id: Long): Response<Post>
@@ -85,11 +68,23 @@ interface ApiService {
     suspend fun dislikePostById(@Path("id") id: Long): Response<Post>
 
     @GET("posts/{id}/newer")
-    suspend fun getNewer(@Path("id") id: Long): Response<List<Post>>
+    suspend fun getNewerPosts(@Path("id") id: Long): Response<List<Post>>
     // posts <--
     // events -->
     @GET("events")
     suspend fun getAllEvents(): Response<List<Event>>
+
+    @GET("events/latest")
+    suspend fun getEventsLatest(@Query("count") count: Int): Response<List<Event>>
+
+    @GET("events/{id}/before")
+    suspend fun getEventsBefore(@Path("id") id: Long, @Query("count") count: Int): Response<List<Event>>
+
+    @GET("events/{id}/after")
+    suspend fun getEventsAfter(@Path("id") id: Long, @Query("count") count: Int): Response<List<Event>>
+
+    @GET("events/{id}")
+    suspend fun getEventById(@Path("id") id: Long): Response<Event>
 
     @POST("events")
     suspend fun saveEvent(@Body event: EventApi): Response<Event>
@@ -131,13 +126,38 @@ interface ApiService {
 
     @GET("users/{id}")
     suspend fun getUserById(@Path("id") id: Long): Response<User>
+
     // users <--
     // wall -->
     @GET("{authorId}/wall")
     suspend fun getUserWall(@Path("authorId") id: Long): Response<List<Post>>
 
+    @GET("{authorId}/wall/latest")
+    suspend fun getUserWallLatest(@Path("authorId") authorId: Long, @Query("count") count: Int): Response<List<Post>>
+
+    @GET("{authorId}/wall/{id}/newer")
+    suspend fun getUserWallNewer(@Path("authorId") authorId: Long, @Path("id") id: Long): Response<List<Post>>
+
+    @GET("{authorId}/wall/{id}/before")
+    suspend fun getUserWallBefore(@Path("authorId") authorId: Long, @Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
+
+    @GET("{authorId}/wall/{id}/after")
+    suspend fun getUserWallAfter(@Path("authorId") authorId: Long, @Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
+
     @GET("my/wall")
     suspend fun getMyWall(): Response<List<Post>>
+
+    @GET("my/wall/latest")
+    suspend fun getMyWallLatest(@Query("count") count: Int): Response<List<Post>>
+
+    @GET("my/wall/{id}/newer")
+    suspend fun getMyWallNewer(@Path("id") id: Long): Response<List<Post>>
+
+    @GET("my/wall/{id}/before")
+    suspend fun getMyWallBefore(@Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
+
+    @GET("my/wall/{id}/after")
+    suspend fun getMyWallAfter(@Path("id") id: Long, @Query("count") count: Int): Response<List<Post>>
 
     @POST("{authorId}/wall/{id}/likes")
     suspend fun likeUserPostById(@Path("authorId") authorId: Long, @Path("id") id: Long): Response<Post>

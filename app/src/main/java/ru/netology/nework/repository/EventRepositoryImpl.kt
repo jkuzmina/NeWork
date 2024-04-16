@@ -1,5 +1,10 @@
 package ru.netology.nework.repository
 
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -12,13 +17,14 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.dao.EventDao
+import ru.netology.nework.dao.EventRemoteKeyDao
+import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Attachment
 import ru.netology.nework.dto.Event
 import ru.netology.nework.dto.Media
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.User
 import ru.netology.nework.entity.EventEntity
-import ru.netology.nework.entity.toDto
 import ru.netology.nework.entity.toEntity
 import ru.netology.nework.entity.toEntityNew
 import ru.netology.nework.enumeration.AttachmentType
@@ -32,13 +38,21 @@ import javax.inject.Singleton
 
 @Singleton
 class EventRepositoryImpl @Inject constructor(
+    appDb: AppDb,
     private val dao: EventDao,
+    eventRemoteKeyDao: EventRemoteKeyDao,
     private val apiService: ApiService,
     private val auth: AppAuth
 ): EventRepository {
-    override val data = dao.getAll()
-        .map(List<EventEntity>::toDto)
-        .flowOn(Dispatchers.Default)
+
+    @OptIn(ExperimentalPagingApi::class)
+    override val data: Flow<PagingData<Event>> = Pager(
+        config = PagingConfig(pageSize = 25),
+        remoteMediator = EventRemoteMediator(apiService, appDb, dao, eventRemoteKeyDao),
+        pagingSourceFactory = dao::pagingSource
+    ).flow.map { pagingData ->
+        pagingData.map(EventEntity::toDto)
+    }
 
     override suspend fun getAll() {
         try {
@@ -89,6 +103,23 @@ class EventRepositoryImpl @Inject constructor(
 
     override suspend fun saveLocal(event: Event) {
         dao.insert(EventEntity.fromDto(event))
+    }
+
+    override suspend fun getEventById(eventId: Long): Event {
+        try {
+            val response = apiService.getEventById(eventId)
+            if (!response.isSuccessful) {
+                throw ApiError(response.code(), response.message())
+            }
+            val body = response.body() ?: throw ApiError(response.code(), response.message())
+            val eventEntity = EventEntity.fromDto(body)
+            dao.insert(eventEntity)
+            return eventEntity.toDto()
+        } catch (e: IOException) {
+            throw NetworkError
+        } catch (e: Exception) {
+            throw UnknownError
+        }
     }
 
     override suspend fun likeById(event: Event): Event {
@@ -256,4 +287,8 @@ class EventRepositoryImpl @Inject constructor(
     }
         .catch { e -> throw AppError.from(e) }
         .flowOn(Dispatchers.Default)
+
+    override suspend fun latestReadEventId(): Long {
+        return  dao.latestReadEventId() ?: 0L
+    }
 }
