@@ -21,4 +21,7 @@ interface JobDao {
     @Query("DELETE FROM JobEntity WHERE id = :id")
     suspend fun removeById(id: Long)
 
+    @Query("SELECT * FROM JobEntity WHERE userId = :userId AND finish == null ORDER BY id DESC")
+    suspend fun getLastJob(userId: Long): JobEntity
+
 }

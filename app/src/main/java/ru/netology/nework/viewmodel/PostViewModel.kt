@@ -11,6 +11,7 @@ import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
@@ -21,6 +22,7 @@ import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Coords
+import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.Post
 import ru.netology.nework.dto.User
@@ -69,6 +71,7 @@ open class PostViewModel @Inject constructor(
 
     //посты загрузились в репозиторий, сохранились в БД и попали в repository.data
     //во вьюмодели храним их с признаком ownedByMe
+    @OptIn(ExperimentalCoroutinesApi::class)
     val data: Flow<PagingData<Post>> = auth.authStateFlow
         .flatMapLatest { (myId, _) ->
             repository.data.map { pagingData ->
@@ -78,6 +81,7 @@ open class PostViewModel @Inject constructor(
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val newerCount: Flow<Int> = data.flatMapLatest {
     repository.getNewerCount(repository.latestReadPostId())
         .catch { e -> throw AppError.from(e) }
@@ -130,6 +134,11 @@ open class PostViewModel @Inject constructor(
     private val _changed = MutableLiveData<Boolean>()
     val changed: LiveData<Boolean>
         get() = _changed
+
+    private val _lastJob = MutableLiveData<Job>()
+    val lastJob: LiveData<Job>
+        get() = _lastJob
+
 
     init {
         loadPosts()
@@ -322,6 +331,20 @@ open class PostViewModel @Inject constructor(
         } catch (e: Exception) {
             _dataState.value = FeedModelState(error = true)
         }
+    }
+
+    fun getLastJob(userId: Long) = viewModelScope.launch {
+        try {
+            _dataState.value = FeedModelState(loading = true)
+            _lastJob.value = repository.getLastJob(userId)
+            _dataState.value = FeedModelState()
+        } catch (e: Exception) {
+            _dataState.value = FeedModelState(error = true)
+        }
+    }
+
+    fun resetError(){
+        _dataState.value = FeedModelState()
     }
 
 }

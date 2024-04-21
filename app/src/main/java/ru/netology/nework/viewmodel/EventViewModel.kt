@@ -11,6 +11,7 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import ru.netology.nework.auth.AppAuth
 import ru.netology.nework.dto.Coords
 import ru.netology.nework.dto.Event
+import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.User
 import ru.netology.nework.enumeration.AttachmentType
@@ -66,6 +68,7 @@ class EventViewModel @Inject constructor(
         .data
         .cachedIn(viewModelScope)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val data: Flow<PagingData<Event>> = auth.authStateFlow
         .flatMapLatest { (myId, _) ->
             cached.map { pagingData ->
@@ -74,6 +77,7 @@ class EventViewModel @Inject constructor(
                 }
             }
         }
+    @OptIn(ExperimentalCoroutinesApi::class)
     val newerCount: Flow<Int> = data.flatMapLatest {
         repository.getNewerCount(repository.latestReadEventId())
             .catch { e -> throw AppError.from(e) }
@@ -139,6 +143,10 @@ class EventViewModel @Inject constructor(
     private val _eventType = MutableLiveData(defaultType)
     val eventType: LiveData<EventType>
         get() = _eventType
+
+    private val _lastJob = MutableLiveData<Job>()
+    val lastJob: LiveData<Job>
+        get() = _lastJob
 
     init {
         loadEvents()
@@ -363,6 +371,20 @@ class EventViewModel @Inject constructor(
         } catch (e: Exception) {
             _dataState.value = FeedModelState(error = true)
         }
+    }
+
+    fun getLastJob(userId: Long) = viewModelScope.launch {
+        try {
+            _dataState.value = FeedModelState(loading = true)
+            _lastJob.value = repository.getLastJob(userId)
+            _dataState.value = FeedModelState()
+        } catch (e: Exception) {
+            _dataState.value = FeedModelState(error = true)
+        }
+    }
+
+    fun resetError(){
+        _dataState.value = FeedModelState()
     }
 
 }

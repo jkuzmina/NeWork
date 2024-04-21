@@ -13,10 +13,11 @@
             android:layout_height="wrap_content"
             >
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintBottom_toBottomOf="@id/header"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_marginStart="@dimen/common_spacing"
                 android:layout_marginTop="@dimen/common_spacing">
@@ -35,13 +36,16 @@
                     android:layout_marginStart="@dimen/common_spacing"
                     app:layout_constraintStart_toEndOf="@id/avatar"
                     app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintVertical_chainStyle="packed"
                     tools:text="Adison Levin"
                     style="@style/HeaderText" />
                 <TextView
+                    android:id="@+id/job"
                     android:layout_marginStart="@dimen/common_spacing"
                     app:layout_constraintStart_toEndOf="@id/avatar"
                     app:layout_constraintTop_toBottomOf="@id/author"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintVertical_chainStyle="packed"
                     tools:text="iOS Developer"
                     style="@style/SubheaderText" />

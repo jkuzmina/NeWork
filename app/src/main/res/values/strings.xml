@@ -28,7 +28,7 @@
     <string name="empty_events">There are no events.\nIf you create a new event, it will appear here</string>
     <string name="empty_jobs">There are no jobs.\nIf you create a new job, it will appear here</string>
     <string name="error_loading">Something went wrong. Try again later</string>
-    <string name="date_pattern">dd.MM.yy HH:mm</string>
+    <string name="date_pattern" translatable="false">dd.MM.yy HH:mm</string>
     <string name="likers">Likers</string>
     <string name="save">Save</string>
     <string name="mentioned">Mentioned</string>
@@ -40,21 +40,21 @@
     <string name="share">Share</string>
     <string name="participants">Participants</string>
     <string name="speakers">Speakers</string>
-    <string name="mm_dd_yyyy_hh_mm">MM/dd/yyyy HH:mm</string>
+    <string name="mm_dd_yyyy_hh_mm" translatable="false">MM/dd/yyyy HH:mm</string>
     <string name="date">Date</string>
-    <string name="online">Online</string>
-    <string name="offline">Offline</string>
+    <string name="online" translatable="false">Online</string>
+    <string name="offline" translatable="false">Offline</string>
     <string name="type">Type</string>
     <string name="my_profile">My profile</string>
     <string name="position">Position</string>
     <string name="link">Link</string>
     <string name="create">Create</string>
-    <string name="mm_dd_yyyy">mm/dd/yyyy</string>
+    <string name="mm_dd_yyyy" translatable="false">mm/dd/yyyy</string>
     <string name="start_date">Start date</string>
     <string name="end_date">End date</string>
     <string name="new_posts">New posts</string>
     <string name="new_events">New events</string>
-    <string name="plus">+</string>
+    <string name="plus" translatable="false">+</string>
     <string name="select_date">Select date</string>
     <string name="enter_dates">Enter dates</string>
     <string name="cancel">Cancel</string>
@@ -69,4 +69,7 @@
     <string name="wrong_format_of_photo">Wrong format of photo</string>
     <string name="task_cancelled">Task cancelled</string>
     <string name="passwords_don_t_match">Passwords don\'t match</string>
+    <string name="user_wall">User wall</string>
+    <string name="new_job">New job</string>
+    <string name="looking_for_a_job">looking for a job</string>
 </resources>

@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -115,6 +116,14 @@ class UserPostsFragment : Fragment() {
                                 state.prepend is LoadState.Loading ||
                                 state.append is LoadState.Loading
                 }
+            }
+        }
+
+        wallViewModel.dataState.observe(viewLifecycleOwner){state ->
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                wallViewModel.resetError()
             }
         }
 

@@ -35,7 +35,7 @@ open class PostRepositoryImpl @Inject constructor(
     private val dao: PostDao,
     private val apiService: ApiService,
     private val auth: AppAuth,
-    private val postRemoteKeyDao: PostRemoteKeyDao,
+    postRemoteKeyDao: PostRemoteKeyDao,
 ): PostRepositoryBaseImpl(dao, apiService) {
 
     @OptIn(ExperimentalPagingApi::class)

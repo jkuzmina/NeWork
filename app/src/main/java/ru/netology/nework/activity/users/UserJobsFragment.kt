@@ -29,15 +29,7 @@ class UserJobsFragment : Fragment() {
             factory,
             userViewModel.selectedUser.value!!
         )
-            //JobRepositoryImpl(userViewModel.selectedUser.value!!, )
-            //jobRepositoryFactory.create(userViewModel.selectedUser.value!!)
     }
-    /*private val jobViewModel: JobViewModel by viewModels(){
-        JobViewModel.JobViewModelFactory(
-            requireActivity().application,
-            userViewModel.selectedUser.value!!
-        )
-    }*/
     private lateinit var binding: FragmentUserJobsBinding
 
     override fun onCreateView(
@@ -72,6 +64,7 @@ class UserJobsFragment : Fragment() {
                         jobViewModel.loadJobs()
                     }
                     .show()
+                jobViewModel.resetError()
             }
         }
 

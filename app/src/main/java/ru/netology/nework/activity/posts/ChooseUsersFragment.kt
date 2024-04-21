@@ -23,11 +23,7 @@ class ChooseUsersFragment : Fragment() {
     }
 
     private val userViewModel: UserViewModel by viewModels()
-    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity) /*{
-        PostViewModel.PostViewModelFactory(
-            requireActivity().application
-        )
-    }*/
+    private val postViewModel: PostViewModel by viewModels(ownerProducer = ::requireActivity)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,13 +34,13 @@ class ChooseUsersFragment : Fragment() {
             false
         )
         userViewModel.loadUsers()
-        val checkedUsers = arguments?.longArrayArg ?: emptyArray<Long>() as LongArray
+        val checkedUsers = arguments?.longArrayArg ?: arrayOf<Long>().toLongArray()
         val adapter = ChooseUserAdapter(
             requireContext(),
             checkedUsers,
             object : OnInteractionListener {
-            override fun onCheck(user: User, isChecked: Boolean) {
-                if(isChecked){
+            override fun onCheck(user: User, checked: Boolean) {
+                if(checked){
                     postViewModel.chooseUser(user)
                 } else
                     postViewModel.removeUser(user)

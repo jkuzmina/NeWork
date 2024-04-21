@@ -23,6 +23,7 @@ import ru.netology.nework.enumeration.AttachmentType
 import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.MediaLifecycleObserver
 
+
 interface OnInteractionListener {
     fun onLike(post: Post) {}
     fun onEdit(post: Post) {}
@@ -35,13 +36,13 @@ interface OnInteractionListener {
     fun onJobDelete(job: Job) {}
 }
 
+
 class PostAdapter(
     private val onInteractionListener: OnInteractionListener,
     context: Context,
     private val authenticated: Boolean,
     private val mediaLifecycleObserver: MediaLifecycleObserver
 ): PagingDataAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
-
 
     private val context: Context
     var previousPosition = -1
@@ -70,6 +71,8 @@ class PostAdapter(
         private val binding: CardPostBinding,
         private val onInteractionListener: OnInteractionListener,
     ) : RecyclerView.ViewHolder(binding.root) {
+
+        var seekBar = binding.audioAttachment.seekBar
 
         fun bind(post: Post, position: Int){
             binding.apply {
@@ -134,7 +137,17 @@ class PostAdapter(
                             audioAttachment.audioAttachmentNested.isVisible = true
                             imageAttachment.isVisible = false
                             videoAttachment.videoAttachmentNested.isVisible = false
-                            audioAttachment.seekBar.progress = post.attachment.progress
+                            if(position != previousPosition){
+                                audioAttachment.playAudio.setBackgroundResource(R.drawable.play_48)
+                                audioAttachment.seekBar.progress = 0
+                                audioAttachment.seekBar.removeCallbacks(mediaLifecycleObserver.runnable)
+                                audioAttachment.playAudio.setBackgroundResource(R.drawable.play_48)
+                            } else{
+                                audioAttachment.seekBar.max = mediaLifecycleObserver.mediaPlayer!!.duration
+                                audioAttachment.seekBar.progress = mediaLifecycleObserver.mediaPlayer!!.currentPosition
+                                audioAttachment.seekBar.postDelayed(mediaLifecycleObserver.runnable, 1000)
+                                audioAttachment.playAudio.setBackgroundResource(R.drawable.pause_48)
+                            }
                         }
                     }
                 }
@@ -157,6 +170,7 @@ class PostAdapter(
                         }
                     }
                 }
+
                 audioAttachment.playAudio.setOnClickListener {
                     if(previousPosition == -1){
                         mediaLifecycleObserver.playAudio(post.attachment!!, audioAttachment.seekBar, audioAttachment.playAudio)
@@ -226,6 +240,7 @@ class PostAdapter(
         }
 
     }
+
 }
 
 

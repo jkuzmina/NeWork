@@ -3,6 +3,7 @@ package ru.netology.nework.repository
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import ru.netology.nework.dto.Event
+import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.Media
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.User
@@ -30,4 +31,5 @@ interface EventRepository {
     suspend fun readNewEvents()
     fun getNewerCount(id: Long): Flow<Int>
     suspend fun latestReadEventId(): Long
+    suspend fun getLastJob(userId: Long): Job?
 }

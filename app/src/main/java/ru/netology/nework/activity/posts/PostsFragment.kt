@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -111,6 +112,15 @@ class PostsFragment : Fragment() {
             }
         }
 
+        postViewModel.dataState.observe(viewLifecycleOwner){state ->
+            binding.progress.isVisible = state.loading
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                postViewModel.resetError()
+            }
+        }
+
         binding.newPosts.setOnClickListener {
             postViewModel.readNewPosts()
             binding.newPosts.isVisible = false
@@ -129,7 +139,6 @@ class PostsFragment : Fragment() {
         binding.swiperefresh.setOnRefreshListener(adapter::refresh)
         return binding.root
     }
-
 
 
 

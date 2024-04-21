@@ -141,7 +141,17 @@ class EventAdapter {
                                 audioAttachment.audioAttachmentNested.isVisible = true
                                 imageAttachment.isVisible = false
                                 videoAttachment.videoAttachmentNested.isVisible = false
-                                audioAttachment.seekBar.progress = event.attachment.progress
+                                if(position != previousPosition){
+                                    audioAttachment.playAudio.setBackgroundResource(R.drawable.play_48)
+                                    audioAttachment.seekBar.progress = 0
+                                    audioAttachment.seekBar.removeCallbacks(mediaLifecycleObserver.runnable)
+                                    audioAttachment.playAudio.setBackgroundResource(R.drawable.play_48)
+                                } else{
+                                    audioAttachment.seekBar.max = mediaLifecycleObserver.mediaPlayer!!.duration
+                                    audioAttachment.seekBar.progress = mediaLifecycleObserver.mediaPlayer!!.currentPosition
+                                    audioAttachment.seekBar.postDelayed(mediaLifecycleObserver.runnable, 1000)
+                                    audioAttachment.playAudio.setBackgroundResource(R.drawable.pause_48)
+                                }
                             }
                         }
                     }

@@ -12,6 +12,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -37,6 +38,7 @@ private val empty = Job(
     userId = 0
     )
 
+@Suppress("UNCHECKED_CAST")
 class JobViewModel @AssistedInject constructor(
     auth: AppAuth,
     @ApplicationContext context: Context,
@@ -60,6 +62,7 @@ class JobViewModel @AssistedInject constructor(
 
     private val repository: JobRepository = JobRepositoryImpl(userId, AppDb.getInstance(context = context).jobDao(), apiService)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val data: LiveData<FeedModel<Job>> = auth
     .authStateFlow
     .flatMapLatest {auth ->
@@ -136,5 +139,9 @@ class JobViewModel @AssistedInject constructor(
         } catch (e: Exception) {
             _dataState.value = FeedModelState(error = true)
         }
+    }
+
+    fun resetError(){
+        _dataState.value = FeedModelState()
     }
 }

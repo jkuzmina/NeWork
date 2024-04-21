@@ -2,6 +2,7 @@ package ru.netology.nework.repository
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.Media
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.Post
@@ -29,4 +30,5 @@ interface PostRepository {
     suspend fun readNewPosts()
     fun getNewerCount(id: Long): Flow<Int>
     suspend fun latestReadPostId(): Long
+    suspend fun getLastJob(userId: Long): Job?
 }

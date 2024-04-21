@@ -11,7 +11,11 @@ import ru.netology.nework.R
 import ru.netology.nework.databinding.CardUserChooseBinding
 import ru.netology.nework.dto.User
 
-class ChooseUserAdapter(private val context: Context, private val checkedUsers: LongArray?, private val onCheckListener: OnInteractionListener) : ListAdapter<User, ChooseUserViewHolder>(ChooseUserDiffCallback()){
+class ChooseUserAdapter(
+    private val context: Context,
+    private var checkedUsers: LongArray?,
+    private val onCheckListener: OnInteractionListener
+) : ListAdapter<User, ChooseUserAdapter.ChooseUserViewHolder>(ChooseUserDiffCallback()){
 
         override fun onBindViewHolder(holder: ChooseUserViewHolder, position: Int) {
             val user = getItem(position)
@@ -21,17 +25,13 @@ class ChooseUserAdapter(private val context: Context, private val checkedUsers: 
             val layoutInflater = LayoutInflater.from(parent.context)
             return ChooseUserViewHolder(
                 context,
-                checkedUsers,
                 CardUserChooseBinding.inflate(layoutInflater, parent, false),
                 onCheckListener
             )
         }
 
-    }
-
-    class ChooseUserViewHolder(
+    inner class ChooseUserViewHolder(
         private val context: Context,
-        private var checkedUsers: LongArray?,
         private val binding: CardUserChooseBinding,
         private val onCheckListener: OnInteractionListener
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -47,7 +47,7 @@ class ChooseUserAdapter(private val context: Context, private val checkedUsers: 
                     .into(binding.avatar)
                 name.text = user.name
                 login.text = user.login
-                checkbox.isChecked = user.checked || checkedUsers?.contains(user.id) == true
+                checkbox.isChecked = checkedUsers?.contains(user.id) == true
 
                 checkbox.setOnClickListener{
                     if(checkedUsers != null) {
@@ -64,6 +64,10 @@ class ChooseUserAdapter(private val context: Context, private val checkedUsers: 
             }
         }
     }
+
+    }
+
+
 
     class ChooseUserDiffCallback : DiffUtil.ItemCallback<User>() {
         override fun areItemsTheSame(oldItem: User, newItem: User): Boolean {

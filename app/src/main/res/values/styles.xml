@@ -88,6 +88,9 @@
         <item name="android:visibility">gone</item>
         <item name="android:autoLink">web</item>
     </style>
-
+    <style name="dialog" parent="@style/ThemeOverlay.MaterialComponents.Dialog">
+        <item name="colorSecondary">@color/primary</item>
+        <item name="colorPrimary">@color/primary</item> <!-- button text color -->
+    </style>
 
 </resources>

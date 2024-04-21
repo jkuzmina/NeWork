@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import dagger.hilt.android.AndroidEntryPoint
@@ -96,6 +97,7 @@ class PostDetailsFragment : Fragment() {
         postViewModel.getPostById(postId)
         postViewModel.currentPost.observe(viewLifecycleOwner) { post ->
             if(post != null) {
+                postViewModel.getLastJob(post.authorId)
                 if (post.likeOwnerIds.isNotEmpty()) {
                     if (needLoadLikersAvatars) {
                         needLoadLikersAvatars = false
@@ -229,6 +231,12 @@ class PostDetailsFragment : Fragment() {
             }
 
         }
+        postViewModel.lastJob.observe(viewLifecycleOwner){
+            if(postViewModel.lastJob.value?.position != null){
+                binding.job.text = postViewModel.lastJob.value?.position.toString()
+            } else binding.job.text = getString(R.string.looking_for_a_job)
+
+        }
         postViewModel.likersLoaded.observe(viewLifecycleOwner){
             postViewModel.likers.value?.forEach { user ->
                 likerNumber++
@@ -246,6 +254,14 @@ class PostDetailsFragment : Fragment() {
                     loadAvatar(imageView, user)
                     imageView.isVisible = true
                 }
+            }
+        }
+
+        postViewModel.dataState.observe(viewLifecycleOwner){state ->
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                postViewModel.resetError()
             }
         }
 

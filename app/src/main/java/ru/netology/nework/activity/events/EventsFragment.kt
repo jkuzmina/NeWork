@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -122,6 +123,14 @@ class EventsFragment : Fragment() {
             eventViewModel.readNewEvents()
             binding.newEvents.isVisible = false
             binding.list.smoothScrollToPosition(0)
+        }
+
+        eventViewModel.dataState.observe(viewLifecycleOwner){state ->
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                eventViewModel.resetError()
+            }
         }
 
         binding.fab.setOnClickListener {

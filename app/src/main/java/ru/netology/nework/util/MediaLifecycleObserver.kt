@@ -13,21 +13,22 @@ import androidx.lifecycle.LifecycleOwner
 import ru.netology.nework.R
 import ru.netology.nework.dto.Attachment
 
+@Suppress("DEPRECATION")
 class MediaLifecycleObserver: LifecycleEventObserver {
 
     var mediaPlayer: MediaPlayer? = MediaPlayer()
-    private var runnable: Runnable? = null
+    var runnable: Runnable? = null
     private var handler = Handler()
     private var playButton: ImageButton? = null
     private var seekBar: SeekBar? = null
     private lateinit var seekBarListener: SeekBar.OnSeekBarChangeListener
 
-    private fun pause(){
+    private fun pause() {
         mediaPlayer?.pause()
         playButton?.setBackgroundResource(R.drawable.play_48)
     }
 
-    fun stop(){
+    fun stop() {
         mediaPlayer?.stop()
         //seekBar?.progress = 0
         playButton?.setBackgroundResource(R.drawable.play_48)
@@ -35,14 +36,14 @@ class MediaLifecycleObserver: LifecycleEventObserver {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        when (event){
+        when (event) {
             Lifecycle.Event.ON_PAUSE -> pause()//mediaPlayer?.pause()
             Lifecycle.Event.ON_STOP -> {
                 //seekBar.removeCallbacks(runnable)
                 mediaPlayer?.release()
                 mediaPlayer = null
-                if(runnable != null){
-                    if(handler.hasCallbacks(runnable!!)){
+                if (runnable != null) {
+                    if (handler.hasCallbacks(runnable!!)) {
                         handler.removeCallbacks(runnable!!)
                     }
                 }
@@ -54,14 +55,15 @@ class MediaLifecycleObserver: LifecycleEventObserver {
             else -> Unit
         }
     }
+
     fun playAudio(attachment: Attachment?, seekBar: SeekBar?, playButton: ImageButton?) {
-        if(attachment == null){
+        if (attachment == null) {
             return
         }
-        if(seekBar == null){
+        if (seekBar == null) {
             return
         }
-        if(playButton == null){
+        if (playButton == null) {
             return
         }
         this.playButton = playButton
@@ -83,28 +85,26 @@ class MediaLifecycleObserver: LifecycleEventObserver {
                     it.start()
                     seekBar.progress = 0
                     seekBar.max = it.duration
+                    attachment.isPlaying = true
                 }
                 playButton.setBackgroundResource(R.drawable.pause_48)
             } else {
                 pause()
+                attachment.isPlaying = false
             }
             seekbar(attachment)
 
-        }catch(e: NullPointerException){
+        } catch (e: NullPointerException) {
             e.printStackTrace()
         }
 
     }
-    fun playAudioFromDescriptor(fileDescriptor: AssetFileDescriptor, seekBar: SeekBar, playButton: ImageButton) {
-        if(fileDescriptor == null){
-            return
-        }
-        if(seekBar == null){
-            return
-        }
-        if(playButton == null){
-            return
-        }
+
+    fun playAudioFromDescriptor(
+        fileDescriptor: AssetFileDescriptor,
+        seekBar: SeekBar,
+        playButton: ImageButton
+    ) {
         this.playButton = playButton
         this.seekBar = seekBar
         if (mediaPlayer == null) {
@@ -131,21 +131,22 @@ class MediaLifecycleObserver: LifecycleEventObserver {
             }
             seekbar(null)
 
-        }catch(e: NullPointerException){
+        } catch (e: NullPointerException) {
             e.printStackTrace()
         }
 
     }
-    fun seekbar(attachment: Attachment?){
-        if(mediaPlayer != null){
+
+    fun seekbar(attachment: Attachment?) {
+        if (mediaPlayer != null) {
             seekBarListener = SeekBarListener(mediaPlayer as MediaPlayer)
             seekBar?.setOnSeekBarChangeListener(seekBarListener)
             runnable = Runnable {
                 seekBar?.progress = mediaPlayer?.currentPosition ?: 0
                 attachment?.progress = seekBar?.progress ?: 0
-                runnable?.let { handler.postDelayed(it, 1000) }
+                handler.let { seekBar?.postDelayed(runnable, 1000) }
             }
-            handler.postDelayed(runnable!!, 1000)
+            seekBar?.postDelayed(runnable!!, 1000)
             mediaPlayer?.setOnCompletionListener {
                 mediaPlayer?.pause()
                 playButton?.setBackgroundResource(R.drawable.play_48)
@@ -153,12 +154,11 @@ class MediaLifecycleObserver: LifecycleEventObserver {
         }
     }
 }
+
 class SeekBarListener(private val mediaPlayer: MediaPlayer): SeekBar.OnSeekBarChangeListener {
     override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
         if (p2) {
-            if(mediaPlayer  != null) {
-                mediaPlayer.seekTo(p1)
-            }
+            mediaPlayer.seekTo(p1)
         }
     }
     override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -168,3 +168,5 @@ class SeekBarListener(private val mediaPlayer: MediaPlayer): SeekBar.OnSeekBarCh
     }
 
 }
+
+

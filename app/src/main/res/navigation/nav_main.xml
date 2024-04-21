@@ -87,7 +87,7 @@
         <fragment
             android:id="@+id/userWallFragment"
             android:name="ru.netology.nework.activity.users.UserWallFragment"
-            android:label="fragment_user_wall"
+            android:label="@string/user_wall"
             tools:layout="@layout/fragment_user_wall">
         <!--suppress NavigationFile -->
             <argument
@@ -112,7 +112,7 @@
         <fragment
             android:id="@+id/newJobFragment"
             android:name="ru.netology.nework.activity.users.NewJobFragment"
-            android:label="fragment_new_job"
+            android:label="@string/new_job"
             tools:layout="@layout/fragment_new_job" />
     </navigation>
     <navigation android:id="@+id/navigationEvents"
@@ -160,11 +160,11 @@
         <fragment
             android:id="@+id/participantsFragment"
             android:name="ru.netology.nework.activity.events.ParticipantsFragment"
-            android:label="ParticipantsFragment" />
+            android:label="@string/participants" />
         <fragment
             android:id="@+id/speakersFragment"
             android:name="ru.netology.nework.activity.events.SpeakersFragment"
-            android:label="SpeakersFragment" />
+            android:label="@string/speakers" />
         <fragment
             android:id="@+id/chooseSpeakersFragment"
             android:name="ru.netology.nework.activity.events.ChooseSpeakersFragment"

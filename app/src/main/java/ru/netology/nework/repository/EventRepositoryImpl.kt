@@ -21,6 +21,7 @@ import ru.netology.nework.dao.EventRemoteKeyDao
 import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Attachment
 import ru.netology.nework.dto.Event
+import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.Media
 import ru.netology.nework.dto.MediaUpload
 import ru.netology.nework.dto.User
@@ -290,5 +291,25 @@ class EventRepositoryImpl @Inject constructor(
 
     override suspend fun latestReadEventId(): Long {
         return  dao.latestReadEventId() ?: 0L
+    }
+
+    override suspend fun getLastJob(userId: Long): Job?{
+        try {
+            val response = apiService.getUserJobs(userId)
+            if (!response.isSuccessful) {
+                throw ApiError(response.code(), response.message())
+            }
+            val body = response.body() ?: throw ApiError(response.code(), response.message())
+            val job = body.filter { it.finish == null }
+                .sortedByDescending { it.id }
+                .first()
+            return job
+        } catch (e: NoSuchElementException){
+            return null
+        } catch (e: IOException) {
+            throw NetworkError
+        } catch (e: Exception) {
+            throw UnknownError
+        }
     }
 }

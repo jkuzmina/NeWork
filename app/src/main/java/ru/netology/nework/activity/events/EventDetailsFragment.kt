@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,7 +41,6 @@ class EventDetailsFragment : Fragment() {
     companion object {
         var Bundle.longArg: Long? by LongArg
     }
-    //private val eventViewModel: EventViewModel by navGraphViewModels(R.id.navigationEvents)
     private val eventViewModel: EventViewModel by viewModels(ownerProducer = ::requireActivity)
     private var mapLikers = HashMap<Int, ImageView>() //мэппинг текущего порядкового номера юзера и контрола
     private var mapParticipants = HashMap<Int, ImageView>()
@@ -97,6 +97,7 @@ class EventDetailsFragment : Fragment() {
         eventViewModel.getEventById(eventId)
         eventViewModel.currentEvent.observe(viewLifecycleOwner) { event ->
             if(event != null) {
+                eventViewModel.getLastJob(event.authorId)
                 if (event.likeOwnerIds.isNotEmpty()) {
                     if (needLoadLikersAvatars) {
                         needLoadLikersAvatars = false
@@ -256,6 +257,13 @@ class EventDetailsFragment : Fragment() {
             }
 
         }
+        eventViewModel.lastJob.observe(viewLifecycleOwner){
+            if(eventViewModel.lastJob.value?.position != null){
+                binding.job.text = eventViewModel.lastJob.value?.position.toString()
+            } else binding.job.text = getString(R.string.looking_for_a_job)
+
+        }
+
         eventViewModel.likersLoaded.observe(viewLifecycleOwner){
             eventViewModel.likers.value?.forEach { user ->
                 likerNumber++
@@ -283,6 +291,14 @@ class EventDetailsFragment : Fragment() {
                     loadAvatar(imageView, user)
                     imageView.isVisible = true
                 }
+            }
+        }
+
+        eventViewModel.dataState.observe(viewLifecycleOwner){state ->
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                eventViewModel.resetError()
             }
         }
         return binding.root

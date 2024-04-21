@@ -21,11 +21,6 @@ class LikersFragment : Fragment() {
     ): View {
         val binding = FragmentLikersEventBinding.inflate(inflater, container, false)
         val adapter = UserAdapter(object : OnInteractionListener {
-            /*override fun onUserClick(user: User) {
-                findNavController().navigate(
-                    R.id.action_usersFragment_to_userWallFragment)
-            }*/
-
         }, requireContext())
 
         binding.list.adapter = adapter

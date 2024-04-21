@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nework.R
@@ -91,11 +92,14 @@ class NewJobFragment : Fragment() {
                 }
                 materialDatePicker.show(childFragmentManager, "tag")
             }
-
+            val clearFinish = dialog.findViewById(R.id.clear_finish) as ImageButton
+            clearFinish.setOnClickListener {
+                endDate.setText("")
+            }
             val yesBtn = dialog.findViewById(R.id.ok) as Button
             yesBtn.setOnClickListener {
                 jobViewModel.setStart(AndroidUtils.calendarToUTCDate(calendarStart))
-                if(endDate.text.toString() == ""){ //todo
+                if(endDate.text.toString() == ""){
                     jobViewModel.setFinish(null)
                 } else calendarEnd.let { jobViewModel.setFinish(AndroidUtils.calendarToUTCDate(it)) }
 
@@ -114,6 +118,14 @@ class NewJobFragment : Fragment() {
             jobViewModel.setPosition(binding.position.text.toString())
             jobViewModel.setLink(binding.link.text.toString())
             jobViewModel.save()
+        }
+
+        jobViewModel.dataState.observe(viewLifecycleOwner){state ->
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .show()
+                jobViewModel.resetError()
+            }
         }
         return binding.root
     }

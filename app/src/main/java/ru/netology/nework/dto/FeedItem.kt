@@ -13,11 +13,10 @@ data class User(
     override val id: Long,
     val login: String,
     val name: String,
-    val avatar: String?,
-    val checked: Boolean = false
+    val avatar: String?
 ) : FeedItem(){
     fun userIcon(context: Context): TextDrawable{
-        val char = if(name != null && name != "") name.first() else ""
+        val char = if(name != "") name.first() else ""
         return TextDrawable(context, char.toString())
     }
 
@@ -131,6 +130,7 @@ data class Attachment(
     var isPlaying: Boolean = false,
     var isLoading: Boolean = false,
     var progress: Int = 0
+
 )
 
 data class Coords(
