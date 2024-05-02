@@ -31,4 +31,5 @@ interface PostRepository {
     fun getNewerCount(id: Long): Flow<Int>
     suspend fun latestReadPostId(): Long
     suspend fun getLastJob(userId: Long): Job?
+    fun setUser(userId: Long)
 }

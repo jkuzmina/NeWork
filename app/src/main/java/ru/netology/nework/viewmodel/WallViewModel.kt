@@ -1,26 +1,29 @@
 package ru.netology.nework.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.paging.PagingData
+import androidx.paging.map
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
-import dagger.hilt.android.qualifiers.ApplicationContext
-import ru.netology.nework.api.ApiService
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import ru.netology.nework.auth.AppAuth
-import ru.netology.nework.db.AppDb
+import ru.netology.nework.dto.Post
+import ru.netology.nework.repository.PostRepoUserWall
 import ru.netology.nework.repository.PostRepository
-import ru.netology.nework.repository.PostRepositoryUserWallImpl
-
 
 
 class WallViewModel @AssistedInject constructor(
+    @PostRepoUserWall private val repository: PostRepository,
     auth: AppAuth,
-    @ApplicationContext context: Context,
     @Assisted private val userId: Long,
-    apiService: ApiService,
-) : PostViewModel(auth, context, apiService) {
+) : PostViewModel(repository, auth) {
+
+    override var data: Flow<PagingData<Post>>
 
     @AssistedFactory
     interface Factory {
@@ -35,14 +38,18 @@ class WallViewModel @AssistedInject constructor(
             }
         }
     }
+    init {
+        repository.setUser(userId)
+        @OptIn(ExperimentalCoroutinesApi::class)
+        data = auth.authStateFlow
+            .flatMapLatest { (myId, _) ->
+                repository.data.map { pagingData ->
+                    pagingData.map { post ->
+                        post.copy(ownedByMe = post.authorId == myId)
+                    }
+                }
+            }
+    }
 
-    override val repository: PostRepository = PostRepositoryUserWallImpl(
-        AppDb.getInstance(context),
-        AppDb.getInstance(context).postDao(),
-        apiService,
-        auth,
-        userId,
-        AppDb.getInstance(context).wallRemoteKeyDao(),
-    )
 
 }

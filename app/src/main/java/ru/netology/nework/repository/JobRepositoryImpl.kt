@@ -1,6 +1,7 @@
 package ru.netology.nework.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import ru.netology.nework.api.ApiService
@@ -13,19 +14,24 @@ import ru.netology.nework.error.ApiError
 import ru.netology.nework.error.NetworkError
 import ru.netology.nework.error.UnknownError
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-/*interface JobRepositoryAssistedFactory {
-    fun create(userId: Long): JobRepositoryImpl
-}*/
-class JobRepositoryImpl(
-    private val userId: Long,
+@Singleton
+class JobRepositoryImpl @Inject constructor(
     private val dao: JobDao,
     private val apiService: ApiService,
     ): JobRepository {
 
-    override val data = dao.getAll(userId)
+    override lateinit var data: Flow<List<Job>>
+    var userId: Long = 0
+
+    override fun setUser(userId: Long) {
+        this.userId = userId
+        data = dao.getAll(userId)
         .map(List<JobEntity>::toDto)
-        .flowOn(Dispatchers.Default)
+            .flowOn(Dispatchers.Default)
+    }
 
     override suspend fun getAll(){
         try {

@@ -1,6 +1,5 @@
 package ru.netology.nework.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -10,20 +9,15 @@ import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
-import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Job
 import ru.netology.nework.model.FeedModel
 import ru.netology.nework.model.FeedModelState
 import ru.netology.nework.repository.JobRepository
-import ru.netology.nework.repository.JobRepositoryImpl
 import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.SingleLiveEvent
 import java.util.Calendar
@@ -40,9 +34,8 @@ private val empty = Job(
 
 @Suppress("UNCHECKED_CAST")
 class JobViewModel @AssistedInject constructor(
+    private val repository: JobRepository,
     auth: AppAuth,
-    @ApplicationContext context: Context,
-    apiService: ApiService,
     @Assisted userId: Long,
     ) : ViewModel(){
 
@@ -59,20 +52,7 @@ class JobViewModel @AssistedInject constructor(
             }
         }
     }
-
-    private val repository: JobRepository = JobRepositoryImpl(userId, AppDb.getInstance(context = context).jobDao(), apiService)
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val data: LiveData<FeedModel<Job>> = auth
-    .authStateFlow
-    .flatMapLatest {auth ->
-        repository.data.map{jobs ->
-            FeedModel(
-                jobs.map { it.copy(ownedByMe = auth.id == it.userId) },
-                jobs.none { userId == it.userId }
-            )
-        }
-    }.asLiveData(Dispatchers.Default)
+    var data: LiveData<FeedModel<Job>>
 
     private val _dataState = MutableLiveData<FeedModelState>()
     val dataState: LiveData<FeedModelState>
@@ -83,6 +63,21 @@ class JobViewModel @AssistedInject constructor(
    private val _jobCreated = SingleLiveEvent<Unit>()
     val jobCreated: LiveData<Unit>
         get() = _jobCreated
+
+    init {
+        repository.setUser(userId)
+        data = auth
+            .authStateFlow
+            .flatMapLatest {auth ->
+                repository.data.map{jobs ->
+                    FeedModel(
+                        jobs.map { it.copy(ownedByMe = auth.id == it.userId) },
+                        jobs.none { userId == it.userId }
+                    )
+                }
+            }.asLiveData(Dispatchers.Default)
+    }
+
 
     fun loadJobs()  = viewModelScope.launch {
         try {

@@ -26,26 +26,34 @@ import ru.netology.nework.error.AppError
 import ru.netology.nework.error.NetworkError
 import ru.netology.nework.error.UnknownError
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PostRepositoryUserWallImpl (
-    appDb: AppDb,
+@Singleton
+class PostRepositoryUserWallImpl @Inject constructor(
+    private val appDb: AppDb,
     private val dao: PostDao,
     private val apiService: ApiService,
     private val auth: AppAuth,
-    private val userId: Long,
-    wallRemoteKeyDao: WallRemoteKeyDao,
+    private val wallRemoteKeyDao: WallRemoteKeyDao,
     ) :
     PostRepositoryBaseImpl(dao, apiService) {
 
+    var userId: Long = 0
+
+    override lateinit var data: Flow<PagingData<Post>>
     @OptIn(ExperimentalPagingApi::class)
-    override val data: Flow<PagingData<Post>> = Pager(
-        config = PagingConfig(pageSize = 25),
-        remoteMediator = WallRemoteMediator(apiService, appDb, dao, wallRemoteKeyDao, auth, userId),
-        pagingSourceFactory = {
-            dao.pagingSourceUserWall(userId)
+    override fun setUser(userId: Long) {
+        this.userId = userId
+        data = Pager(
+            config = PagingConfig(pageSize = 25),
+            remoteMediator = WallRemoteMediator(apiService, appDb, dao, wallRemoteKeyDao, auth, userId),
+            pagingSourceFactory = {
+                dao.pagingSourceUserWall(userId)
+            }
+        ).flow.map { pagingData ->
+            pagingData.map(PostEntity::toDto)
         }
-    ).flow.map { pagingData ->
-        pagingData.map(PostEntity::toDto)
     }
 
 

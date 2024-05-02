@@ -1,6 +1,5 @@
 package ru.netology.nework.viewmodel
 
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -18,9 +16,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import ru.netology.nework.api.ApiService
 import ru.netology.nework.auth.AppAuth
-import ru.netology.nework.db.AppDb
 import ru.netology.nework.dto.Coords
 import ru.netology.nework.dto.Job
 import ru.netology.nework.dto.MediaUpload
@@ -30,8 +26,8 @@ import ru.netology.nework.enumeration.AttachmentType
 import ru.netology.nework.error.AppError
 import ru.netology.nework.model.AttachmentModel
 import ru.netology.nework.model.FeedModelState
+import ru.netology.nework.repository.PostRepo
 import ru.netology.nework.repository.PostRepository
-import ru.netology.nework.repository.PostRepositoryImpl
 import ru.netology.nework.util.AndroidUtils
 import ru.netology.nework.util.SingleLiveEvent
 import java.io.File
@@ -56,23 +52,14 @@ private val noAttachment: AttachmentModel? = null
 
 @HiltViewModel
 open class PostViewModel @Inject constructor(
+    @PostRepo private val repository: PostRepository,
     auth: AppAuth,
-    @ApplicationContext context: Context,
-    apiService: ApiService,
-
     ) : ViewModel() {
-    open val repository: PostRepository = PostRepositoryImpl(
-        AppDb.getInstance(context),
-        AppDb.getInstance(context).postDao(),
-        apiService,
-        auth,
-        AppDb.getInstance(context).postRemoteKeyDao(),
-    )
 
     //посты загрузились в репозиторий, сохранились в БД и попали в repository.data
     //во вьюмодели храним их с признаком ownedByMe
     @OptIn(ExperimentalCoroutinesApi::class)
-    val data: Flow<PagingData<Post>> = auth.authStateFlow
+    open var data: Flow<PagingData<Post>> = auth.authStateFlow
         .flatMapLatest { (myId, _) ->
             repository.data.map { pagingData ->
                 pagingData.map { post ->

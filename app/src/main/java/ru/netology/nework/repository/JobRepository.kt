@@ -4,7 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import ru.netology.nework.dto.Job
 
 interface JobRepository {
-    val data: Flow<List<Job>>
+    var data: Flow<List<Job>>
+    fun setUser(userId: Long)
     suspend fun getAll()
     suspend fun removeById(job: Job)
     suspend fun save(job: Job)

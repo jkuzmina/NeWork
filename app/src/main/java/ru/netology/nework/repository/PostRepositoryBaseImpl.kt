@@ -31,6 +31,9 @@ abstract class PostRepositoryBaseImpl(
 
     abstract override suspend fun getAll()
 
+    override fun setUser(userId: Long) {
+    }
+
     override suspend fun save(post: Post) {
         try {
             val response = apiService.savePost(post.toPostApi())
