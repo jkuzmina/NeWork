@@ -147,6 +147,7 @@ class PostAdapter(
                                 audioAttachment.seekBar.progress = mediaLifecycleObserver.mediaPlayer!!.currentPosition
                                 audioAttachment.seekBar.postDelayed(mediaLifecycleObserver.runnable, 1000)
                                 audioAttachment.playAudio.setBackgroundResource(R.drawable.pause_48)
+                                mediaLifecycleObserver.seekSet(audioAttachment.seekBar)
                             }
                         }
                     }

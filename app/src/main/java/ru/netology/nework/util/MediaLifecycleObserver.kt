@@ -153,6 +153,10 @@ class MediaLifecycleObserver: LifecycleEventObserver {
             }
         }
     }
+
+    fun seekSet(seekBar: SeekBar) {
+        this.seekBar = seekBar
+    }
 }
 
 class SeekBarListener(private val mediaPlayer: MediaPlayer): SeekBar.OnSeekBarChangeListener {
